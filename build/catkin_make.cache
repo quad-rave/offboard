@@ -1,0 +1,2 @@
+offboard_cpp
+-DCATKIN_DEVEL_PREFIX=/home/serkan/Documents/offboard/devel -DCMAKE_INSTALL_PREFIX=/home/serkan/Documents/offboard/install -G Unix Makefiles
