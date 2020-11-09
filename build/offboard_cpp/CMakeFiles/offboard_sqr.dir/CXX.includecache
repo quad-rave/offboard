@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/serkan/Documents/offboard/src/offboard_cpp/src/offb_node_square.cpp
+/home/bargos/offboard/src/offboard_cpp/src/offb_node_square.cpp
 ros/ros.h
 -
 geometry_msgs/PoseStamped.h
@@ -20,7 +20,7 @@ mavros_msgs/SetMode.h
 mavros_msgs/State.h
 -
 std_msgs/String.h
-/home/serkan/Documents/offboard/src/offboard_cpp/src/std_msgs/String.h
+/home/bargos/offboard/src/offboard_cpp/src/std_msgs/String.h
 string.h
 -
 

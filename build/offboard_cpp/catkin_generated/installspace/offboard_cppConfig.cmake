@@ -67,14 +67,14 @@ set(offboard_cpp_CONFIG_INCLUDED TRUE)
 
 # set variables for source/devel/install prefixes
 if("FALSE" STREQUAL "TRUE")
-  set(offboard_cpp_SOURCE_PREFIX /home/serkan/Documents/offboard/src/offboard_cpp)
-  set(offboard_cpp_DEVEL_PREFIX /home/serkan/Documents/offboard/devel)
+  set(offboard_cpp_SOURCE_PREFIX /home/bargos/offboard/src/offboard_cpp)
+  set(offboard_cpp_DEVEL_PREFIX /home/bargos/offboard/devel)
   set(offboard_cpp_INSTALL_PREFIX "")
   set(offboard_cpp_PREFIX ${offboard_cpp_DEVEL_PREFIX})
 else()
   set(offboard_cpp_SOURCE_PREFIX "")
   set(offboard_cpp_DEVEL_PREFIX "")
-  set(offboard_cpp_INSTALL_PREFIX /home/serkan/Documents/offboard/install)
+  set(offboard_cpp_INSTALL_PREFIX /home/bargos/offboard/install)
   set(offboard_cpp_PREFIX ${offboard_cpp_INSTALL_PREFIX})
 endif()
 
@@ -154,7 +154,7 @@ foreach(library ${libraries})
     set(lib_path "")
     set(lib "${library}-NOTFOUND")
     # since the path where the library is found is returned we have to iterate over the paths manually
-    foreach(path /home/serkan/Documents/offboard/install/lib;/home/serkan/Documents/catkin_ws/devel/lib;/home/serkan/catkin_ws/devel/lib;/opt/ros/melodic/lib)
+    foreach(path /home/bargos/offboard/install/lib;/home/bargos/catkin_ws/devel/lib;/home/bargos/offboard/devel/lib;/opt/ros/melodic/lib)
       find_library(lib ${library}
         PATHS ${path}
         NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)

@@ -7,8 +7,4 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/serkan/Documents/offboard/devel:$CMAKE_PREFIX_PATH"
-export LD_LIBRARY_PATH="/home/serkan/Documents/offboard/devel/lib:$LD_LIBRARY_PATH"
-export PWD='/home/serkan/Documents/offboard/build'
-export ROSLISP_PACKAGE_DIRECTORIES="/home/serkan/Documents/offboard/devel/share/common-lisp:$ROSLISP_PACKAGE_DIRECTORIES"
-export ROS_PACKAGE_PATH="/home/serkan/Documents/offboard/src:$ROS_PACKAGE_PATH"
+export PWD='/home/bargos/offboard/build'
