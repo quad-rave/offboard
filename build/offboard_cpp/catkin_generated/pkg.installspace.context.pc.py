@@ -4,5 +4,5 @@ PROJECT_PKG_CONFIG_INCLUDE_DIRS = "".split(';') if "" != "" else []
 PROJECT_CATKIN_DEPENDS = "".replace(';', ' ')
 PKG_CONFIG_LIBRARIES_WITH_PREFIX = "".split(';') if "" != "" else []
 PROJECT_NAME = "offboard_cpp"
-PROJECT_SPACE_DIR = "/home/serkan/Documents/offboard/install"
+PROJECT_SPACE_DIR = "/home/bargos/offboard/install"
 PROJECT_VERSION = "0.0.0"

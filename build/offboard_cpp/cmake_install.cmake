@@ -1,8 +1,8 @@
-# Install script for directory: /home/serkan/Documents/offboard/src/offboard_cpp
+# Install script for directory: /home/bargos/offboard/src/offboard_cpp
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/serkan/Documents/offboard/install")
+  set(CMAKE_INSTALL_PREFIX "/home/bargos/offboard/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,17 +38,17 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/serkan/Documents/offboard/build/offboard_cpp/catkin_generated/installspace/offboard_cpp.pc")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig" TYPE FILE FILES "/home/bargos/offboard/build/offboard_cpp/catkin_generated/installspace/offboard_cpp.pc")
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/offboard_cpp/cmake" TYPE FILE FILES
-    "/home/serkan/Documents/offboard/build/offboard_cpp/catkin_generated/installspace/offboard_cppConfig.cmake"
-    "/home/serkan/Documents/offboard/build/offboard_cpp/catkin_generated/installspace/offboard_cppConfig-version.cmake"
+    "/home/bargos/offboard/build/offboard_cpp/catkin_generated/installspace/offboard_cppConfig.cmake"
+    "/home/bargos/offboard/build/offboard_cpp/catkin_generated/installspace/offboard_cppConfig-version.cmake"
     )
 endif()
 
 if("x${CMAKE_INSTALL_COMPONENT}x" STREQUAL "xUnspecifiedx" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/offboard_cpp" TYPE FILE FILES "/home/serkan/Documents/offboard/src/offboard_cpp/package.xml")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/share/offboard_cpp" TYPE FILE FILES "/home/bargos/offboard/src/offboard_cpp/package.xml")
 endif()
 

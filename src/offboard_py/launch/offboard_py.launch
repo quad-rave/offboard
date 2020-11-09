@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Load configuration parameters -->
+  <rosparam command="load" file="$(find offboard_py)/config/config.yaml" />
+
+  <!-- Start the node -->
+  <node name="offboard_py" pkg="offboard_py"
+        type="offboard_py_node" output="screen" />
+</launch>

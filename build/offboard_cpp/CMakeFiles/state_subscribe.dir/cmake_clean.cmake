@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/state_subscribe.dir/src/sqr_state_sub.cpp.o"
-  "/home/serkan/Documents/offboard/devel/lib/offboard_cpp/state_subscribe.pdb"
-  "/home/serkan/Documents/offboard/devel/lib/offboard_cpp/state_subscribe"
+  "/home/bargos/offboard/devel/lib/offboard_cpp/state_subscribe.pdb"
+  "/home/bargos/offboard/devel/lib/offboard_cpp/state_subscribe"
 )
 
 # Per-language clean rules from dependency scanning.

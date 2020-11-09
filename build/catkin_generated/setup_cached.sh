@@ -7,8 +7,5 @@
 # new environment variables
 
 # modified environment variables
-export CMAKE_PREFIX_PATH="/home/serkan/Documents/offboard/devel:$CMAKE_PREFIX_PATH"
-export LD_LIBRARY_PATH="/home/serkan/Documents/offboard/devel/lib:$LD_LIBRARY_PATH"
-export PWD='/home/serkan/Documents/offboard/build'
-export ROSLISP_PACKAGE_DIRECTORIES="/home/serkan/Documents/offboard/devel/share/common-lisp:$ROSLISP_PACKAGE_DIRECTORIES"
-export ROS_PACKAGE_PATH="/home/serkan/Documents/offboard/src:$ROS_PACKAGE_PATH"
+export PATH='/opt/ros/melodic/bin:/home/bargos/anaconda3/bin:/home/bargos/anaconda3/condabin:/opt/gcc-arm-none-eabi-9-2020-q2-update/bin:/home/bargos/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin'
+export PWD='/home/bargos/offboard/build'
