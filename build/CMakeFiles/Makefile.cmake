@@ -27,6 +27,7 @@ set(CMAKE_MAKEFILE_DEPENDS
   "/home/bargos/offboard/src/offboard_cpp/package.xml"
   "/home/bargos/offboard/src/offboard_py/CMakeLists.txt"
   "/home/bargos/offboard/src/offboard_py/bin/offboard_py_node"
+  "/home/bargos/offboard/src/offboard_py/bin/offboard_state_listener_node"
   "/home/bargos/offboard/src/offboard_py/package.xml"
   "/home/bargos/offboard/src/offboard_py/setup.py"
   "/opt/ros/melodic/share/catkin/cmake/../package.xml"

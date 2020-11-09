@@ -19,3 +19,7 @@ install(DIRECTORY config launch msg
 catkin_install_python(PROGRAMS bin/${PROJECT_NAME}_node
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+catkin_install_python(PROGRAMS bin/offboard_state_listener_node
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
