@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rospy_template</name>
+  <name>offboard_py</name>
   <version>0.0.0</version>
-  <description>The rospy_template package</description>
+  <description>The offboard_py package</description>
   <maintainer email="liamondrop@gmail.com">Liam Bowers</maintainer>
 
   <license>MIT</license>

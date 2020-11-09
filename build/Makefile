@@ -506,160 +506,160 @@ std_msgs_generate_messages_py/fast:
 .PHONY : std_msgs_generate_messages_py/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_geneus
+# Target rules for targets named offboard_py_generate_messages_nodejs
 
 # Build rule for target.
-rospy_template_geneus: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_geneus
-.PHONY : rospy_template_geneus
+offboard_py_generate_messages_nodejs: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_generate_messages_nodejs
+.PHONY : offboard_py_generate_messages_nodejs
 
 # fast build rule for target.
-rospy_template_geneus/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_geneus.dir/build.make rospy-template/CMakeFiles/rospy_template_geneus.dir/build
-.PHONY : rospy_template_geneus/fast
+offboard_py_generate_messages_nodejs/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_generate_messages_nodejs.dir/build.make offboard_py/CMakeFiles/offboard_py_generate_messages_nodejs.dir/build
+.PHONY : offboard_py_generate_messages_nodejs/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_generate_messages_cpp
+# Target rules for targets named offboard_py_genlisp
 
 # Build rule for target.
-rospy_template_generate_messages_cpp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_generate_messages_cpp
-.PHONY : rospy_template_generate_messages_cpp
+offboard_py_genlisp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_genlisp
+.PHONY : offboard_py_genlisp
 
 # fast build rule for target.
-rospy_template_generate_messages_cpp/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_generate_messages_cpp.dir/build.make rospy-template/CMakeFiles/rospy_template_generate_messages_cpp.dir/build
-.PHONY : rospy_template_generate_messages_cpp/fast
+offboard_py_genlisp/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_genlisp.dir/build.make offboard_py/CMakeFiles/offboard_py_genlisp.dir/build
+.PHONY : offboard_py_genlisp/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_gencpp
+# Target rules for targets named offboard_py_generate_messages_eus
 
 # Build rule for target.
-rospy_template_gencpp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_gencpp
-.PHONY : rospy_template_gencpp
+offboard_py_generate_messages_eus: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_generate_messages_eus
+.PHONY : offboard_py_generate_messages_eus
 
 # fast build rule for target.
-rospy_template_gencpp/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_gencpp.dir/build.make rospy-template/CMakeFiles/rospy_template_gencpp.dir/build
-.PHONY : rospy_template_gencpp/fast
+offboard_py_generate_messages_eus/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_generate_messages_eus.dir/build.make offboard_py/CMakeFiles/offboard_py_generate_messages_eus.dir/build
+.PHONY : offboard_py_generate_messages_eus/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_generate_messages
+# Target rules for targets named offboard_py_generate_messages
 
 # Build rule for target.
-rospy_template_generate_messages: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_generate_messages
-.PHONY : rospy_template_generate_messages
+offboard_py_generate_messages: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_generate_messages
+.PHONY : offboard_py_generate_messages
 
 # fast build rule for target.
-rospy_template_generate_messages/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_generate_messages.dir/build.make rospy-template/CMakeFiles/rospy_template_generate_messages.dir/build
-.PHONY : rospy_template_generate_messages/fast
+offboard_py_generate_messages/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_generate_messages.dir/build.make offboard_py/CMakeFiles/offboard_py_generate_messages.dir/build
+.PHONY : offboard_py_generate_messages/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_generate_messages_eus
+# Target rules for targets named offboard_py_geneus
 
 # Build rule for target.
-rospy_template_generate_messages_eus: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_generate_messages_eus
-.PHONY : rospy_template_generate_messages_eus
+offboard_py_geneus: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_geneus
+.PHONY : offboard_py_geneus
 
 # fast build rule for target.
-rospy_template_generate_messages_eus/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_generate_messages_eus.dir/build.make rospy-template/CMakeFiles/rospy_template_generate_messages_eus.dir/build
-.PHONY : rospy_template_generate_messages_eus/fast
+offboard_py_geneus/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_geneus.dir/build.make offboard_py/CMakeFiles/offboard_py_geneus.dir/build
+.PHONY : offboard_py_geneus/fast
 
 #=============================================================================
-# Target rules for targets named _rospy_template_generate_messages_check_deps_Message
+# Target rules for targets named offboard_py_generate_messages_py
 
 # Build rule for target.
-_rospy_template_generate_messages_check_deps_Message: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 _rospy_template_generate_messages_check_deps_Message
-.PHONY : _rospy_template_generate_messages_check_deps_Message
+offboard_py_generate_messages_py: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_generate_messages_py
+.PHONY : offboard_py_generate_messages_py
 
 # fast build rule for target.
-_rospy_template_generate_messages_check_deps_Message/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/_rospy_template_generate_messages_check_deps_Message.dir/build.make rospy-template/CMakeFiles/_rospy_template_generate_messages_check_deps_Message.dir/build
-.PHONY : _rospy_template_generate_messages_check_deps_Message/fast
+offboard_py_generate_messages_py/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_generate_messages_py.dir/build.make offboard_py/CMakeFiles/offboard_py_generate_messages_py.dir/build
+.PHONY : offboard_py_generate_messages_py/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_genlisp
+# Target rules for targets named _offboard_py_generate_messages_check_deps_Message
 
 # Build rule for target.
-rospy_template_genlisp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_genlisp
-.PHONY : rospy_template_genlisp
+_offboard_py_generate_messages_check_deps_Message: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 _offboard_py_generate_messages_check_deps_Message
+.PHONY : _offboard_py_generate_messages_check_deps_Message
 
 # fast build rule for target.
-rospy_template_genlisp/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_genlisp.dir/build.make rospy-template/CMakeFiles/rospy_template_genlisp.dir/build
-.PHONY : rospy_template_genlisp/fast
+_offboard_py_generate_messages_check_deps_Message/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/_offboard_py_generate_messages_check_deps_Message.dir/build.make offboard_py/CMakeFiles/_offboard_py_generate_messages_check_deps_Message.dir/build
+.PHONY : _offboard_py_generate_messages_check_deps_Message/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_generate_messages_lisp
+# Target rules for targets named offboard_py_generate_messages_lisp
 
 # Build rule for target.
-rospy_template_generate_messages_lisp: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_generate_messages_lisp
-.PHONY : rospy_template_generate_messages_lisp
+offboard_py_generate_messages_lisp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_generate_messages_lisp
+.PHONY : offboard_py_generate_messages_lisp
 
 # fast build rule for target.
-rospy_template_generate_messages_lisp/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_generate_messages_lisp.dir/build.make rospy-template/CMakeFiles/rospy_template_generate_messages_lisp.dir/build
-.PHONY : rospy_template_generate_messages_lisp/fast
+offboard_py_generate_messages_lisp/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_generate_messages_lisp.dir/build.make offboard_py/CMakeFiles/offboard_py_generate_messages_lisp.dir/build
+.PHONY : offboard_py_generate_messages_lisp/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_generate_messages_nodejs
+# Target rules for targets named offboard_py_gennodejs
 
 # Build rule for target.
-rospy_template_generate_messages_nodejs: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_generate_messages_nodejs
-.PHONY : rospy_template_generate_messages_nodejs
+offboard_py_gennodejs: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_gennodejs
+.PHONY : offboard_py_gennodejs
 
 # fast build rule for target.
-rospy_template_generate_messages_nodejs/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_generate_messages_nodejs.dir/build.make rospy-template/CMakeFiles/rospy_template_generate_messages_nodejs.dir/build
-.PHONY : rospy_template_generate_messages_nodejs/fast
+offboard_py_gennodejs/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_gennodejs.dir/build.make offboard_py/CMakeFiles/offboard_py_gennodejs.dir/build
+.PHONY : offboard_py_gennodejs/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_gennodejs
+# Target rules for targets named offboard_py_gencpp
 
 # Build rule for target.
-rospy_template_gennodejs: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_gennodejs
-.PHONY : rospy_template_gennodejs
+offboard_py_gencpp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_gencpp
+.PHONY : offboard_py_gencpp
 
 # fast build rule for target.
-rospy_template_gennodejs/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_gennodejs.dir/build.make rospy-template/CMakeFiles/rospy_template_gennodejs.dir/build
-.PHONY : rospy_template_gennodejs/fast
+offboard_py_gencpp/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_gencpp.dir/build.make offboard_py/CMakeFiles/offboard_py_gencpp.dir/build
+.PHONY : offboard_py_gencpp/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_generate_messages_py
+# Target rules for targets named offboard_py_generate_messages_cpp
 
 # Build rule for target.
-rospy_template_generate_messages_py: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_generate_messages_py
-.PHONY : rospy_template_generate_messages_py
+offboard_py_generate_messages_cpp: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_generate_messages_cpp
+.PHONY : offboard_py_generate_messages_cpp
 
 # fast build rule for target.
-rospy_template_generate_messages_py/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_generate_messages_py.dir/build.make rospy-template/CMakeFiles/rospy_template_generate_messages_py.dir/build
-.PHONY : rospy_template_generate_messages_py/fast
+offboard_py_generate_messages_cpp/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_generate_messages_cpp.dir/build.make offboard_py/CMakeFiles/offboard_py_generate_messages_cpp.dir/build
+.PHONY : offboard_py_generate_messages_cpp/fast
 
 #=============================================================================
-# Target rules for targets named rospy_template_genpy
+# Target rules for targets named offboard_py_genpy
 
 # Build rule for target.
-rospy_template_genpy: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rospy_template_genpy
-.PHONY : rospy_template_genpy
+offboard_py_genpy: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 offboard_py_genpy
+.PHONY : offboard_py_genpy
 
 # fast build rule for target.
-rospy_template_genpy/fast:
-	$(MAKE) -f rospy-template/CMakeFiles/rospy_template_genpy.dir/build.make rospy-template/CMakeFiles/rospy_template_genpy.dir/build
-.PHONY : rospy_template_genpy/fast
+offboard_py_genpy/fast:
+	$(MAKE) -f offboard_py/CMakeFiles/offboard_py_genpy.dir/build.make offboard_py/CMakeFiles/offboard_py_genpy.dir/build
+.PHONY : offboard_py_genpy/fast
 
 # Help Target
 help:
@@ -700,18 +700,18 @@ help:
 	@echo "... std_msgs_generate_messages_nodejs"
 	@echo "... roscpp_generate_messages_nodejs"
 	@echo "... std_msgs_generate_messages_py"
-	@echo "... rospy_template_geneus"
-	@echo "... rospy_template_generate_messages_cpp"
-	@echo "... rospy_template_gencpp"
-	@echo "... rospy_template_generate_messages"
-	@echo "... rospy_template_generate_messages_eus"
-	@echo "... _rospy_template_generate_messages_check_deps_Message"
-	@echo "... rospy_template_genlisp"
-	@echo "... rospy_template_generate_messages_lisp"
-	@echo "... rospy_template_generate_messages_nodejs"
-	@echo "... rospy_template_gennodejs"
-	@echo "... rospy_template_generate_messages_py"
-	@echo "... rospy_template_genpy"
+	@echo "... offboard_py_generate_messages_nodejs"
+	@echo "... offboard_py_genlisp"
+	@echo "... offboard_py_generate_messages_eus"
+	@echo "... offboard_py_generate_messages"
+	@echo "... offboard_py_geneus"
+	@echo "... offboard_py_generate_messages_py"
+	@echo "... _offboard_py_generate_messages_check_deps_Message"
+	@echo "... offboard_py_generate_messages_lisp"
+	@echo "... offboard_py_gennodejs"
+	@echo "... offboard_py_gencpp"
+	@echo "... offboard_py_generate_messages_cpp"
+	@echo "... offboard_py_genpy"
 .PHONY : help
 
 

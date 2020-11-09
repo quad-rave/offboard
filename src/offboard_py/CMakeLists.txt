@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rospy_template)
+project(offboard_py)
 
 find_package(catkin REQUIRED COMPONENTS
     std_msgs

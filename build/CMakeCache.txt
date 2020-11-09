@@ -372,6 +372,12 @@ offboard_cpp_BINARY_DIR:STATIC=/home/bargos/offboard/build/offboard_cpp
 //Value Computed by CMake
 offboard_cpp_SOURCE_DIR:STATIC=/home/bargos/offboard/src/offboard_cpp
 
+//Value Computed by CMake
+offboard_py_BINARY_DIR:STATIC=/home/bargos/offboard/build/offboard_py
+
+//Value Computed by CMake
+offboard_py_SOURCE_DIR:STATIC=/home/bargos/offboard/src/offboard_py
+
 //The directory containing a CMake configuration file for rosconsole.
 rosconsole_DIR:PATH=/opt/ros/melodic/share/rosconsole/cmake
 
