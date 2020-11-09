@@ -1,2 +1,2 @@
-offboard_cpp:offboard_py
--DCATKIN_DEVEL_PREFIX=/home/bargos/offboard/devel -DCMAKE_INSTALL_PREFIX=/home/bargos/offboard/install -G Unix Makefiles
+offboard_cpp
+-DCATKIN_DEVEL_PREFIX=/home/serkan/Documents/offboard/devel -DCMAKE_INSTALL_PREFIX=/home/serkan/Documents/offboard/install -G Unix Makefiles

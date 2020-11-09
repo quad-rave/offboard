@@ -1,8 +1,0 @@
-prefix=/home/bargos/offboard/install
-
-Name: offboard_py
-Description: Description of offboard_py
-Version: 0.0.0
-Cflags: -I${prefix}/include
-Libs: -L${prefix}/lib 
-Requires: message_runtime

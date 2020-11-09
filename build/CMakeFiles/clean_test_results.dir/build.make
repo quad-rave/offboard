@@ -43,10 +43,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/bargos/offboard/src
+CMAKE_SOURCE_DIR = /home/serkan/Documents/offboard/src
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/bargos/offboard/build
+CMAKE_BINARY_DIR = /home/serkan/Documents/offboard/build
 
 # Utility rule file for clean_test_results.
 
@@ -54,7 +54,7 @@ CMAKE_BINARY_DIR = /home/bargos/offboard/build
 include CMakeFiles/clean_test_results.dir/progress.make
 
 CMakeFiles/clean_test_results:
-	/usr/bin/python2 /opt/ros/melodic/share/catkin/cmake/test/remove_test_results.py /home/bargos/offboard/build/test_results
+	/usr/bin/python2 /opt/ros/melodic/share/catkin/cmake/test/remove_test_results.py /home/serkan/Documents/offboard/build/test_results
 
 clean_test_results: CMakeFiles/clean_test_results
 clean_test_results: CMakeFiles/clean_test_results.dir/build.make
@@ -71,6 +71,6 @@ CMakeFiles/clean_test_results.dir/clean:
 .PHONY : CMakeFiles/clean_test_results.dir/clean
 
 CMakeFiles/clean_test_results.dir/depend:
-	cd /home/bargos/offboard/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/bargos/offboard/src /home/bargos/offboard/src /home/bargos/offboard/build /home/bargos/offboard/build /home/bargos/offboard/build/CMakeFiles/clean_test_results.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/serkan/Documents/offboard/build && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/serkan/Documents/offboard/src /home/serkan/Documents/offboard/src /home/serkan/Documents/offboard/build /home/serkan/Documents/offboard/build /home/serkan/Documents/offboard/build/CMakeFiles/clean_test_results.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/clean_test_results.dir/depend
 

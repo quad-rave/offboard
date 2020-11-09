@@ -2,7 +2,7 @@
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "/home/bargos/offboard/install")
+  set(CMAKE_INSTALL_PREFIX "/home/serkan/Documents/offboard/install")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/bargos/offboard/build/gtest/googlemock/gtest/cmake_install.cmake")
+  include("/home/serkan/Documents/offboard/build/gtest/googlemock/gtest/cmake_install.cmake")
 
 endif()
 

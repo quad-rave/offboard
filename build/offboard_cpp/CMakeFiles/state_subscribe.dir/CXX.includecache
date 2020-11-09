@@ -6,11 +6,11 @@
 
 #IncludeRegexTransform: 
 
-/home/bargos/offboard/src/offboard_cpp/src/sqr_state_sub.cpp
+/home/serkan/Documents/offboard/src/offboard_cpp/src/sqr_state_sub.cpp
 ros/ros.h
-/home/bargos/offboard/src/offboard_cpp/src/ros/ros.h
+/home/serkan/Documents/offboard/src/offboard_cpp/src/ros/ros.h
 std_msgs/String.h
-/home/bargos/offboard/src/offboard_cpp/src/std_msgs/String.h
+/home/serkan/Documents/offboard/src/offboard_cpp/src/std_msgs/String.h
 
 /opt/ros/melodic/include/ros/advertise_options.h
 ros/forwards.h

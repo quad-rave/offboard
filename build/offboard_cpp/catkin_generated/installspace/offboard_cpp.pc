@@ -1,4 +1,4 @@
-prefix=/home/bargos/offboard/install
+prefix=/home/serkan/Documents/offboard/install
 
 Name: offboard_cpp
 Description: Description of offboard_cpp

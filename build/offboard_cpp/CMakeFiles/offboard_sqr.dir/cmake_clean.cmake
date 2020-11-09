@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/offboard_sqr.dir/src/offb_node_square.cpp.o"
-  "/home/bargos/offboard/devel/lib/offboard_cpp/offboard_sqr.pdb"
-  "/home/bargos/offboard/devel/lib/offboard_cpp/offboard_sqr"
+  "/home/serkan/Documents/offboard/devel/lib/offboard_cpp/offboard_sqr.pdb"
+  "/home/serkan/Documents/offboard/devel/lib/offboard_cpp/offboard_sqr"
 )
 
 # Per-language clean rules from dependency scanning.
