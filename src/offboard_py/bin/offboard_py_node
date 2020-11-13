@@ -11,9 +11,12 @@ from mavros.utils import *
 from mavros import setpoint as SP
 from tf.transformations import quaternion_from_euler
 from mavros_msgs.srv import SetMode
+from mavros_msgs.srv import CommandTOL
+from mavros_msgs.srv import CommandBool
 from std_msgs.msg import String
+from mavros import command
 #from mavros_msgs.msg import 
-
+from mavsdk import System
 
 class SetpointPosition:
     """
@@ -23,16 +26,19 @@ class SetpointPosition:
         self.x = 0.0
         self.y = 0.0
         self.z = 0.0
-
+        print("default namespace: " + mavros.DEFAULT_NAMESPACE) 
         self.pub_state = rospy.Publisher("sqr_state", String, queue_size = 10)
+        self.pub = rospy.Publisher('uav0/mavros/setpoint_position/pose', SP.PoseStamped, queue_size=10)
         # publisher for mavros/setpoint_position/local
-        self.pub = SP.get_pub_position_local(queue_size=10)
+        #self.pub = SP.get_pub_position_local(queue_size=10)
         # subscriber for mavros/local_position/local
-        self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'pose'),
-                                    SP.PoseStamped, self.reached)
+        self.sub = rospy.Subscriber('uav0/mavros/local_position/pose', SP.PoseStamped, self.reached)
 
         self.offb_set_mode = SetMode()
 
+        self.arming_cl = rospy.ServiceProxy('uav0/mavros/cmd/arming', CommandBool)
+        self.takeoff_cl = rospy.ServiceProxy('uav0/mavros/cmd/takeoff', CommandTOL)
+        self.change_mode = rospy.ServiceProxy('uav0/mavros/set_mode', SetMode)
         try:
             thread.start_new_thread(self.navigate, ())
         except:
@@ -54,7 +60,6 @@ class SetpointPosition:
             msg.pose.position.x = self.x
             msg.pose.position.y = self.y
             msg.pose.position.z = self.z
-
             # For demo purposes we will lock yaw/heading to north.
             yaw_degrees = 0  # North
             yaw = radians(yaw_degrees)
@@ -97,8 +102,30 @@ def setpoint_demo():
 
     setpoint.pub_state.publish(str(0))
 
-    flightModeService = rospy.ServiceProxy('mavros/set_mode', SetMode)
-    flightModeService(custom_mode='OFFBOARD')
+
+    mavros.set_namespace()
+    #command.arming(True)
+
+    rospy.wait_for_service('uav0/mavros/cmd/arming')
+    response = setpoint.arming_cl(value = True)
+    rospy.loginfo(response)
+
+    time.sleep(5)
+
+    rospy.wait_for_service('uav0/mavros/cmd/takeoff')
+    response = setpoint.takeoff_cl(altitude=10, latitude=0, longitude=0, min_pitch=0, yaw=0)
+    rospy.loginfo(response)
+    
+    time.sleep(6)
+    #return
+
+    rospy.wait_for_service('uav0/mavros/set_mode')
+    response = setpoint.change_mode(custom_mode="OFFBOARD")
+    rospy.loginfo(response)
+
+    #rospy.wait_for_service('uav0/mavros/set_mode')
+    #flightModeService = rospy.ServiceProxy('uav0/mavros/set_mode', SetMode)
+    #flightModeService(custom_mode='OFFBOARD')
     
 
 
@@ -117,6 +144,7 @@ def setpoint_demo():
     
 
     rospy.loginfo("Bye!")
+    
 
 
 if __name__ == '__main__':
