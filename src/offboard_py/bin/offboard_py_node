@@ -28,7 +28,7 @@ class SetpointPosition:
         self.z = 0.0
         print("default namespace: " + mavros.DEFAULT_NAMESPACE) 
         self.pub_state = rospy.Publisher("sqr_state", String, queue_size = 10)
-        self.pub = rospy.Publisher('uav0/mavros/setpoint_position/pose', SP.PoseStamped, queue_size=10)
+        self.pub = rospy.Publisher('uav0/mavros/setpoint_position/local', SP.PoseStamped, queue_size=10)
         # publisher for mavros/setpoint_position/local
         #self.pub = SP.get_pub_position_local(queue_size=10)
         # subscriber for mavros/local_position/local
