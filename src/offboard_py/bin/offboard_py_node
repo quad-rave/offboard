@@ -57,6 +57,15 @@ class SetpointPosition:
                 stamp=rospy.Time.now()),    # stamp should update
         )
         while not rospy.is_shutdown():
+            rospy.wait_for_service('uav0/mavros/cmd/arming')
+            response = self.arming_cl(value = True)
+            rospy.loginfo(response)
+
+            rospy.wait_for_service('uav0/mavros/set_mode')
+            response = self.change_mode(custom_mode="OFFBOARD")
+            rospy.loginfo(response)
+
+
             msg.pose.position.x = self.x
             msg.pose.position.y = self.y
             msg.pose.position.z = self.z
@@ -98,14 +107,19 @@ def setpoint_demo():
     rospy.init_node('setpoint_position_demo')
     mavros.set_namespace()  # initialize mavros module with default namespace
     rate = rospy.Rate(10)
+
     setpoint = SetpointPosition()
+
 
     setpoint.pub_state.publish(str(0))
 
 
     mavros.set_namespace()
     #command.arming(True)
+    setpoint.pub_state.publish(str(1))
 
+    setpoint.set(0.0, 0.0, 5.0, 5)
+    '''
     rospy.wait_for_service('uav0/mavros/cmd/arming')
     response = setpoint.arming_cl(value = True)
     rospy.loginfo(response)
@@ -126,11 +140,9 @@ def setpoint_demo():
     #rospy.wait_for_service('uav0/mavros/set_mode')
     #flightModeService = rospy.ServiceProxy('uav0/mavros/set_mode', SetMode)
     #flightModeService(custom_mode='OFFBOARD')
-    
+    '''
 
 
-    setpoint.pub_state.publish(str(1))
-    setpoint.set(0.0, 0.0, 5.0, 5)
     setpoint.pub_state.publish(str(2))
     setpoint.set(10.0, 0.0, 5.0, 5)
     setpoint.pub_state.publish(str(3))
