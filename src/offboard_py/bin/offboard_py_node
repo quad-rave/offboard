@@ -32,20 +32,45 @@ def start_missions():
     
     for drone_index, uav_name in enumerate(uav_nameobject.keys()):
         uav = uav_nameobject[uav_name]
+        pose = uav.get_current_pose().pose.position
         
         missions = [
                 TakeOff(uav, rate),
-                GoAndWait(uav, rate, 3,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10)
+
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+                #2 helix
+                Helix(uav, rate, 5, 5, 3),
+                Freeze(uav, rate, 1.5),
+                Helix(uav, rate, 5, 5, 3),
+                
+                #Go down
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+
+                #2 helix
+                Helix(uav, rate, 5, 5, 3),
+                Freeze(uav, rate, 1.5),
+                Helix(uav, rate, 5, 5, 3),
+
+                #Go down
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+                
+                #2 helix
+                Helix(uav, rate, 5, 5, 3),
+                Freeze(uav, rate, 1.5),
+                Helix(uav, rate, 5, 5, 3),
+                
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+
+
+                #GoAndWait(uav, rate, 3,  drone_index * 5,0, 5),
+                #MakeCircle(uav, rate, 6, 2),
+                #GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
+                #MakeCircle(uav, rate, 6, 2),
+                #GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
+                #MakeCircle(uav, rate, 6, 2),
+                #GoAndWait(uav, rate, 2,  drone_index * 5,0,10)
                 
                 ] 
-
-
         drone_missions[uav_name] = missions
         
     uav_threads = []
@@ -138,7 +163,7 @@ class UAV:
 
 
 
-class Mission:
+class Mission(object):
     def __init__(self, uav, rate):
         self.uav = uav
         self.rate = rate
@@ -170,9 +195,59 @@ class Mission:
         sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
         return sincestart
 
+class Helix(Mission):
+    def __init__(self, uav, rate, period, radius, slope):
+            #x(t) = acos(t),
+            #y(t) = asin(t)
+            #z(t) = bt
+            #slope b/a, pitch 2*pi*b
+        super(Helix ,self).__init__(uav, rate)
+        self.T = period #(sec)
+        self.a = radius
+        self.b = slope * radius
+
+    def mission_started(self):
+        super(Helix ,self).mission_started()
+        self.center = self.uav.get_current_pose().pose.position
+        self.center.x = self.center.x - self.a
+
+    def mission_loop(self):
+        T = self.get_time_since_start() / self.T
+        x = self.a * cos(T * 2 * pi)
+        y = self.a * sin(T * 2 * pi)
+        self.uav.set_target_pose(self.center.x + x, self.center.y + y, self.center.z + self.b)
+
+        dx = - self.a * sin(T * 2 * pi)
+        dy = self.a * cos(T * 2 * pi)
+        dz = self.b
+        self.uav.set_target_velocity(dx, dy, dz)
+
+    def mission_ended(self):
+        if(self.get_time_since_start() > self.T):
+            return True
+        else:
+            return False
+
+class Freeze(Mission):
+    ## Bu freeze kısmının update'e girmesi lazım mission_loop'da bir setpoint yapılması gerekiyor diğer türlü otopilot kendini anlık failsafe'e alıyor.
+    ## Freeze diye bir methodun olması da önemli mesela 2 helix yaptırırken değerleri çekmek çok zor rostopic'den burada halletmek daha kolay olur.
+    def __init__(self, uav, rate, duration):
+        super(Freeze, self).__init__(uav, rate)
+        self.duration = duration
+
+    def mission_loop(self):
+        self.rate.sleep()
+
+    def mission_ended(self):
+        timesup = self.get_time_since_start() > self.duration
+        if timesup:
+            return True
+        else:
+            return False
+
 class GoAndWait(Mission):
-    def __init__(self, uav, rate, duration, x,y,z):
-        super().__init__(uav, rate)
+    def __init__(self, uav, rate, duration, x, y, z):
+        super(GoAndWait, self).__init__(uav, rate)
         self.setpoint = SetpointPosition(uav, rate, x,y,z)
         self.duration = duration
 
@@ -191,13 +266,13 @@ class GoAndWait(Mission):
 
 class MakeCircle(Mission):
     def __init__(self, uav, rate, period, radius):
-        super().__init__(uav, rate)
+        super(MakeCircle, self).__init__(uav, rate)
         self.period = period
         self.radius = radius
         self.center = None
     
     def mission_started(self):
-        super().mission_started()
+        super(MakeCircle, self).mission_started()
         self.center = self.uav.get_current_pose().pose.position
         self.center.x = self.center.x -self.radius
         
@@ -220,11 +295,11 @@ class MakeCircle(Mission):
 
 class TakeOff(Mission):
     def __init__(self, uav, rate):
-        super().__init__(uav, rate)
+        super(TakeOff, self).__init__(uav, rate)
         self.setpoint = None
 
     def mission_started(self):
-        super().mission_started()
+        super(TakeOff, self).mission_started()
         uav_start_pose = self.uav.get_current_pose()
         self.setpoint = SetpointPosition(self.uav, self.rate, uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
 
@@ -243,7 +318,7 @@ class SetpointPosition(Mission):
     This class sends position targets to FCU's position controller
     """
     def __init__(self,uav, rate,x,y,z):
-        super().__init__(uav, rate)
+        super(SetpointPosition, self).__init__(uav, rate)
         self.x = x
         self.y = y
         self.z = z
