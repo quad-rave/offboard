@@ -40,7 +40,7 @@ def start_missions():
                 GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
                 #2 helix
                 Helix(uav, rate, 5, 5, 3),
-                Freeze(uav, rate, 1.5),
+                Wait(uav, rate, 1.5),
                 Helix(uav, rate, 5, 5, 3),
                 
                 #Go down
@@ -48,7 +48,7 @@ def start_missions():
 
                 #2 helix
                 Helix(uav, rate, 5, 5, 3),
-                Freeze(uav, rate, 1.5),
+                Wait(uav, rate, 1.5),
                 Helix(uav, rate, 5, 5, 3),
 
                 #Go down
@@ -56,7 +56,7 @@ def start_missions():
                 
                 #2 helix
                 Helix(uav, rate, 5, 5, 3),
-                Freeze(uav, rate, 1.5),
+                Wait(uav, rate, 1.5),
                 Helix(uav, rate, 5, 5, 3),
                 
                 GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
@@ -113,12 +113,15 @@ class UAV:
             frame_id="base_footprint",  # no matter, plugin don't use TF
             stamp=rospy.Time.now()),    # stamp should update
         )
-        self.twist_stamped = TwistStamped() # delete
+        self._last_target_pose = None
 
 
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic
     
+
+    def get_last_target_pose(self):
+        return self._last_target_pose
 
     def get_current_time(self):
         return rospy.rostime.Time.now()
@@ -149,6 +152,7 @@ class UAV:
         yaw = radians(yaw_degrees)
         quaternion = quaternion_from_euler(0, 0, yaw)
         msg.pose.orientation = SP.Quaternion(*quaternion)
+        self._last_target_pose = msg
         self.pub_pose.publish(msg)
         
 
@@ -228,22 +232,24 @@ class Helix(Mission):
         else:
             return False
 
-class Freeze(Mission):
-    ## Bu freeze kısmının update'e girmesi lazım mission_loop'da bir setpoint yapılması gerekiyor diğer türlü otopilot kendini anlık failsafe'e alıyor.
-    ## Freeze diye bir methodun olması da önemli mesela 2 helix yaptırırken değerleri çekmek çok zor rostopic'den burada halletmek daha kolay olur.
+class Wait(Mission):
+    ## Bu wait kısmının update'e girmesi lazım mission_loop'da bir setpoint yapılması gerekiyor diğer türlü otopilot kendini anlık failsafe'e alıyor.
+    ## Wait diye bir methodun olması da önemli mesela 2 helix yaptırırken değerleri çekmek çok zor rostopic'den burada halletmek daha kolay olur.
     def __init__(self, uav, rate, duration):
-        super(Freeze, self).__init__(uav, rate)
+        super(Wait, self).__init__(uav, rate)
+        self.go_and_wait = None
         self.duration = duration
 
+    def mission_started(self):
+        super(Wait, self).mission_started()
+        last_setpoint = self.uav.get_last_target_pose()
+        self.go_and_wait = GoAndWait(self.uav, self.rate, self.duration, last_setpoint.pose.x,last_setpoint.pose.y,last_setpoint.pose.z)
+
     def mission_loop(self):
-        self.rate.sleep()
+        self.go_and_wait.mission_loop()
 
     def mission_ended(self):
-        timesup = self.get_time_since_start() > self.duration
-        if timesup:
-            return True
-        else:
-            return False
+        return self.go_and_wait.mission_ended()
 
 class GoAndWait(Mission):
     def __init__(self, uav, rate, duration, x, y, z):
