@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # vim:set ts=4 sw=4 et:
+
 import rospy
 import _thread as thread
 import threading
@@ -19,6 +20,44 @@ from mavros import command
 #from mavsdk import System
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
+
+## New task: selecting a leader which give commands from the gcs to the rest of the group
+# the command is applied by the group.
+# How do we make the connections 
+# Create a mission which accepts its leader
+
+class DataBuffer():
+    def __init__(self):
+        self.data = ""
+        self.list = []
+        self.index = 0
+        self.string = ""
+    def to_string(self):
+        self.string = ''.join([str(elem)+"," for elem in self.list]).strip(",")     
+    def from_string(self, value):
+        self.list = self.string.split(",")
+
+    def write_float(self, value):
+        self.list.append(str(value))
+        
+    def read_float(self):
+        return float(self.list.pop())
+
+    def write_vector3(self, vector3):
+        x = vector3.x
+        y = vector3.y
+        z = vector3.z
+        self.write_float(x)
+        self.write_float(y)
+        self.write_float(z)
+
+    def read_vector3(self):
+        x = self.read_float()
+        y = self.read_float()
+        z = self.read_float()
+        return Vector3(x,y,z)
+
+
 
 def start_missions():   
     rospy.init_node('destroyer')
@@ -90,9 +129,58 @@ class UAVThread:
         for mission in self.missions:
             mission.execute_mission()
         
+class NetworkedInfo(object):
+    def __init__(self, topic):
+        self.topic_pub = rospy.Publisher(topic, String, queue_size = 10)
+
+    def publish_msg(self):
+        pass
+
+    def receive_msg(self,topic):
+        DataBuffer buffer = Buffer()
+        buffer.from_string(topic)
+        self.msg = topic
+
+    def set_msg(self, msg):
+        self.msg = msg
+    
+    def get_msg(self):
+        return self.msg
+
+    
+'''
+class FollowerMission:
+    def init(topic):
+        self.posinfo = VectorInfo("/network/uav0/position")
+        self.alldrone_positions =[]
+        for i in range(5):
+        self.alldrone_positions.append(VectorInfo("/network/uav"+ str(i)+ "/position"))
+        
+    def mission_started(self)
+        wait(0.5)
+    
+    def mission_loop(self):
+        self.posinfo.vector3 = uav.position
+        self.postinfo.publish()
+
+        other_pos = self.other_pos.vector3
+    
+'''
+
+class VectorInfo(InfoTransmitter): 
+    def __init__(self, topic):
+        super(VectorInfo, self).__init__(topic)
+        self.vector3 = Vector3()
+
+    def set_msg(self, vector3):
+        self.value = vector3
+        
+    def get_msg(self)
+        return self.vector3
+        
     
 
-class UAV:
+class UAV(object):
     
     def __init__(self, uav_name):
         self.uav_name = uav_name
@@ -115,6 +203,21 @@ class UAV:
         )
         self._last_target_pose = None
 
+
+    def add_info_transmitter(self, key):
+        pass
+    def remove_info_transmitter(self, key):
+        pass
+
+    def add_info_reciever(self, key):
+        pass
+    def remove_info_reciever(self, key):
+        pass
+
+    def get_info_transmitter(self, key):
+        pass
+    def get_info_transmitter(self, key):
+        pass
 
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic
@@ -164,8 +267,31 @@ class UAV:
         rospy.wait_for_service(self.uav_name + '/mavros/set_mode')
         response = self.change_mode(custom_mode="OFFBOARD")
         #rospy.loginfo(response)
+    '''
+    def add_info_transmitter(self, maps):
+        self.commander_message = maps
+    def get_info_transmitter(self):
+        return self.commander_message
+    '''
 
+'''
+class Commander(UAV):
+    def __init__(self, uav_name, team):
+        super(Commander ,self).__init__(uav_name)
+        self.team = team
+        self.message_topic = None
+    def give_command(self, gcs_message):
+        self. = rospy.Publisher(""super(Commander, self).uav_name, String, queue_size = 10)
+        super(Commander, self).add_info_transmitter(gcs_message)
 
+class Slave(UAV):
+    def __init__(self, uav_name, leader):
+        super(Slave, self).__init__(uav_name)
+        self.leader = leader
+        self.message = None
+    def receive_command(self, gcs_message):
+        self.message = super(Slave, self).get_info_transmitter()
+'''
 
 class Mission(object):
     def __init__(self, uav, rate):
