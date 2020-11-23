@@ -28,14 +28,19 @@ from geometry_msgs.msg import Vector3
 
 class DataBuffer():
     def __init__(self):
-        self.data = ""
         self.list = []
-        self.index = 0
-        self.string = ""
+
     def to_string(self):
-        self.string = ''.join([str(elem)+"," for elem in self.list]).strip(",")     
-    def from_string(self, value):
-        self.list = self.string.split(",")
+        return ''.join([str(elem)+"," for elem in self.list]).strip(",")     
+    def from_string(value):
+        data_buffer = DataBuffer()
+        data_buffer.list = value.split(",")
+        return data_buffer
+
+    def write_int(self, value):
+        self.list.append(str(value))
+    def read_int(self):
+        return int(self.list.pop())
 
     def write_float(self, value):
         self.list.append(str(value))
@@ -128,29 +133,51 @@ class UAVThread:
         time.sleep(5) # wait for subscribers to recieve first info
         for mission in self.missions:
             mission.execute_mission()
-        
+
+
+
 class NetworkedInfo(object):
     def __init__(self, topic):
         self.topic_pub = rospy.Publisher(topic, String, queue_size = 10)
-
-    def publish_msg(self):
-        pass
-
-    def receive_msg(self,topic):
-        DataBuffer buffer = Buffer()
-        buffer.from_string(topic)
-        self.msg = topic
-
-    def set_msg(self, msg):
-        self.msg = msg
-    
-    def get_msg(self):
-        return self.msg
+        self.topic_sub = rospy.Subscriber(topic, String, self._on_topic_recieve)
 
     
-'''
+    # dont override these two:
+    def _on_topic_recieve(self,topic):
+        topic_buffer = DataBuffer.from_string(topic)
+        self.deserialize_from_buffer(topic_buffer)
+
+    def publish_data(self):
+        buffer = DataBuffer()
+        self.serialize_into_buffer(buffer)
+        str_data = buffer.to_string()
+        self.topic_pub.publish(str_data)
+
+    # these two are for overriding:
+    def serialize_into_buffer(self, buffer):
+        raise Exception("NetworkedInfo does not implement required method")
+    def deserialize_from_buffer(self, buffer);
+        raise Exception("NetworkedInfo does not implement required method")
+
+
+
+class VectorInfo(NetworkedInfo): 
+    def __init__(self, topic):
+        super(VectorInfo, self).__init__(topic)
+        self.value = Vector3()
+
+    def serialize_into_buffer(self, buffer):
+        buffer.write_vector3(self.value)
+    def deserialize_from_buffer(self, buffer);
+        self.value = buffer.read_vector3()
+
+
+class LeaderMission(object):
+    def __init__(self, topic):
+        
+
 class FollowerMission:
-    def init(topic):
+    def __init__(self, topic):
         self.posinfo = VectorInfo("/network/uav0/position")
         self.alldrone_positions =[]
         for i in range(5):
@@ -165,20 +192,7 @@ class FollowerMission:
 
         other_pos = self.other_pos.vector3
     
-'''
 
-class VectorInfo(InfoTransmitter): 
-    def __init__(self, topic):
-        super(VectorInfo, self).__init__(topic)
-        self.vector3 = Vector3()
-
-    def set_msg(self, vector3):
-        self.value = vector3
-        
-    def get_msg(self)
-        return self.vector3
-        
-    
 
 class UAV(object):
     
@@ -202,27 +216,17 @@ class UAV(object):
             stamp=rospy.Time.now()),    # stamp should update
         )
         self._last_target_pose = None
+        self.active_missions = []
 
 
-    def add_info_transmitter(self, key):
+    def _add_mission_from_topic(self):
         pass
-    def remove_info_transmitter(self, key):
-        pass
+         
 
-    def add_info_reciever(self, key):
-        pass
-    def remove_info_reciever(self, key):
-        pass
-
-    def get_info_transmitter(self, key):
-        pass
-    def get_info_transmitter(self, key):
-        pass
 
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic
     
-
     def get_last_target_pose(self):
         return self._last_target_pose
 
@@ -293,12 +297,32 @@ class Slave(UAV):
         self.message = super(Slave, self).get_info_transmitter()
 '''
 
+# this is for serialization/deserialization purposes
+class TwoWayDict(object):
+    def __init__(self):
+        self.key_to_value = {}
+        self.value_to_key = {}
+    
+    def add(self, key, value):
+        self.key_to_value[key] = value
+        self.value_to_key[value] = key
+
+    def get_value(key):
+        return self.key_to_value[key]
+    def get_key(value):
+        return self.value_to_key[value]
+
+missiontype_to_constructor = TwoWayDict()
+
 class Mission(object):
+    
+
     def __init__(self, uav, rate):
         self.uav = uav
         self.rate = rate
         self.start_time = None
-    
+        
+
     def execute_mission(self):
         self.mission_started()
         while(True):
@@ -309,6 +333,14 @@ class Mission(object):
             #rospy.spinOnce()     
             self.rate.sleep()
     
+    def initialize_from_buffer(buffer):
+        constructor = missiontype_to_constructor[buffer.read_]
+
+    def deserialize_from_buffer(self, buffer):
+        raise Exception("Mission does not implement required method")
+    def serialize_into_buffer(self, buffer):
+        raise Exception("Mission does not implement required method")
+
     def mission_started(self):
         self.start_time = self.uav.get_current_time()
         pass
@@ -324,6 +356,9 @@ class Mission(object):
     def get_time_since_start(self):
         sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
         return sincestart
+    
+
+
 
 class Helix(Mission):
     def __init__(self, uav, rate, period, radius, slope):
@@ -357,6 +392,7 @@ class Helix(Mission):
             return True
         else:
             return False
+missiontype_to_constructor.add(0,Helix)
 
 class Wait(Mission):
     ## Bu wait kısmının update'e girmesi lazım mission_loop'da bir setpoint yapılması gerekiyor diğer türlü otopilot kendini anlık failsafe'e alıyor.
@@ -376,6 +412,7 @@ class Wait(Mission):
 
     def mission_ended(self):
         return self.go_and_wait.mission_ended()
+missiontype_to_constructor.add(1, Wait)
 
 class GoAndWait(Mission):
     def __init__(self, uav, rate, duration, x, y, z):
@@ -393,7 +430,7 @@ class GoAndWait(Mission):
             return True
         else:
             return False
-    
+missiontype_to_constructor.add(2, GoAndWait)
 
 
 class MakeCircle(Mission):
@@ -423,7 +460,7 @@ class MakeCircle(Mission):
             return True
         else:
             return False
-
+missiontype_to_constructor.add(3, MakeCircle)
 
 class TakeOff(Mission):
     def __init__(self, uav, rate):
@@ -443,7 +480,7 @@ class TakeOff(Mission):
     
     def mission_ended(self):
         return self.setpoint.mission_ended()
-
+missiontype_to_constructor.add(4, TakeOff)
 
 class SetpointPosition(Mission):
     """
@@ -469,6 +506,7 @@ class SetpointPosition(Mission):
             is_near(current_pos.pose.position.z, self.z):
             return True
         return False
+missiontype_to_constructor.add(5, SetpointPosition)
 
 if __name__ == '__main__':
     try:
