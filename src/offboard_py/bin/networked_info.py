@@ -25,7 +25,7 @@ class NetworkedInfo(object):
     # these two are for overriding:
     def serialize_into_buffer(self, buffer):
         raise Exception("NetworkedInfo does not implement required method")
-    def deserialize_from_buffer(self, buffer);
+    def deserialize_from_buffer(self, buffer):
         raise Exception("NetworkedInfo does not implement required method")
 
 # my_vector_info.value = myVector
@@ -38,5 +38,5 @@ class VectorInfo(NetworkedInfo):
 
     def serialize_into_buffer(self, buffer):
         buffer.write_vector3(self.value)
-    def deserialize_from_buffer(self, buffer);
+    def deserialize_from_buffer(self, buffer):
         self.value = buffer.read_vector3()

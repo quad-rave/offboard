@@ -4,7 +4,7 @@
 # this is for type serialization/deserialization purposes
 from buffer import DataBuffer
 from uav import UAV
-from networked_info import NetworkedInfo
+from networked_info import *
 from utility import TwoWayDict
 
 from geometry_msgs.msg import TwistStamped
@@ -15,11 +15,19 @@ class MissionFactory(object):
         self.missiontype_to_constructor = missiontype_to_constructor
         self.mission_from_buffer
     
-    def mission_from_buffer(buffer : DataBuffer):
-        mission_class = self.missiontype_to_constructor[buffer.read_int()]
+    def mission_from_buffer(self, buffer):
+        mission_class = self.missiontype_to_constructor.get_value(buffer.read_int())
 
-        mission_obj =  mission_class()
-        mission_obj.deserialize_from_buffer(buffer)
+        mission =  mission_class()
+        mission.deserialize_from_buffer(buffer)
+        return mission
+
+    def buffer_from_mission(self, mission):
+        buffer = DataBuffer()
+        mission_type = self.missiontype_to_constructor.get_key(type(mission))
+        buffer.write_int(mission_type)
+        mission.serialize_into_buffer(buffer)
+        return buffer
 
 class Mission(object):
     # constuctor paramaters must all have default values, or there will be issues with MissionFactory
@@ -30,21 +38,23 @@ class Mission(object):
         self.uav = uav
         self.rate = rate
 
-        mission_started(self, uav, rate)
+        self.mission_started(uav, rate)
 
         while(True):
             if(self.mission_ended(uav, rate)):
                 break
             else:
-                self.mission_loop(uav rate)
+                self.mission_loop(uav, rate)
             self.rate.sleep()
 
 
     def deserialize_from_buffer(self, buffer):
-        raise Exception("Mission does not implement required method")
+        pass
+        #raise Exception("Mission does not implement required method")
 
     def serialize_into_buffer(self, buffer):
-        raise Exception("Mission does not implement required method")
+        pass
+        #raise Exception("Mission does not implement required method")
 
     def mission_started(self, uav, rate):
         self.start_time = self.uav.get_current_time()
@@ -59,6 +69,38 @@ class Mission(object):
     def get_time_since_start(self, uav, rate):
         sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
         return sincestart
+
+class FormationLeader(Mission):
+    def __init__(self):
+        self.target_pos_infos = []
+    
+    def mission_started(self,uav,rate):
+        slave_mission = FormationSlave()
+        for i in range(3):
+            slave_name = "uav" + str(uav)
+            position_target_info = VectorInfo(slave_name + "/formation_mission/position_target")
+            self.target_pos_infos.append(position_target_info)
+            uav.assign_mission(slave_mission, slave_name)
+
+    def mission_loop(self, uav, rate):
+        for i in range(3):
+            position_target_info = target_pos_infos[i]
+            position_target_info.value = Vector3(i * 3, self.get_time_since_start * 0.1 , 5)
+            position_target_info.publish_data()
+
+class FormationSlave(Mission):
+    def __init__(self):
+        self.target_pos_info = None
+        self.setpoint = SetpointPosition()
+    
+    def mission_started(self,uav,rate):
+        self.target_pos_info = VectorInfo("uav" + str(uav) + "/formation_mission/position_target")
+        takeoff = TakeOff()
+        takeoff.execute_mission(uav, rate)
+    
+    def mission_loop(self, uav, rate):
+        self.setpoint.target_position = target_pos_info.value
+        self.setpoint.mission_loop()
 
 class SetpointPosition(Mission):
     """
@@ -224,4 +266,6 @@ def get_missiontype_to_constructor():
     missiontype_to_constructor.add(3, MakeCircle)
     missiontype_to_constructor.add(4, TakeOff)
     missiontype_to_constructor.add(5, SetpointPosition)
+    missiontype_to_constructor.add(6, FormationLeader)
+    missiontype_to_constructor.add(7, FormationSlave)
     return missiontype_to_constructor
