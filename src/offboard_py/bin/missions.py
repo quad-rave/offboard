@@ -7,35 +7,38 @@ from uav import UAV
 from networked_info import NetworkedInfo
 from utility import TwoWayDict
 
+from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import Vector3
+
 class MissionFactory(object):
     def __init__(self, missiontype_to_constructor):
         self.missiontype_to_constructor = missiontype_to_constructor
         self.mission_from_buffer
     
-    def mission_from_buffer(buffer):
+    def mission_from_buffer(buffer : DataBuffer):
         mission_class = self.missiontype_to_constructor[buffer.read_int()]
 
         mission_obj =  mission_class()
         mission_obj.deserialize_from_buffer(buffer)
 
 class Mission(object):
-
+    # constuctor paramaters must all have default values, or there will be issues with MissionFactory
     def __init__(self):
-        self.uav = None
-        self.rate = None
-        self.start_time = None
+        pass
         
     def execute_mission(self, uav, rate):
         self.uav = uav
         self.rate = rate
 
-        self.mission_started()
+        mission_started(self, uav, rate)
+
         while(True):
-            if(self.mission_ended()):
+            if(self.mission_ended(uav, rate)):
                 break
             else:
-                self.mission_loop()      
+                self.mission_loop(uav rate)
             self.rate.sleep()
+
 
     def deserialize_from_buffer(self, buffer):
         raise Exception("Mission does not implement required method")
@@ -43,19 +46,17 @@ class Mission(object):
     def serialize_into_buffer(self, buffer):
         raise Exception("Mission does not implement required method")
 
-    def mission_started(self):
+    def mission_started(self, uav, rate):
         self.start_time = self.uav.get_current_time()
         pass
 
-    def mission_loop(self):
-        print("PROBLEM0")
+    def mission_loop(self, uav, rate):
         pass
 
-    def mission_ended(self):
-        print("PROBLEM1")
-        return False
+    def mission_ended(self, uav, rate):
+        pass
 
-    def get_time_since_start(self):
+    def get_time_since_start(self, uav, rate):
         sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
         return sincestart
 
@@ -63,12 +64,10 @@ class SetpointPosition(Mission):
     """
     This class sends position targets to FCU's position controller
     """
-    def __init__(self, target_position):
+    def __init__(self, target_position = Vector3()):
         super(SetpointPosition, self).__init__()
         self.target_position = target_position
     
-    def __init__(self):
-        super(SetpointPosition, self).__init__()
         
 
     def deserialize_from_buffer(self, buffer):
@@ -78,11 +77,11 @@ class SetpointPosition(Mission):
         buffer.write_vector3(self.target_position)
 
     
-    def mission_loop(self):
-        self.uav.set_target_pose(self.x,self.y,self.z)
+    def mission_loop(self, uav, rate):
+        uav.set_target_pose(self.target_position.x,self.target_position.y,self.target_position.z)
 
-    def mission_ended(self):
-        current_pos = self.uav.get_current_pose()
+    def mission_ended(self, uav, rate):
+        current_pos = uav.get_current_pose()
 
         def is_near(cur, tar):
             return abs(cur - tar) < 0.5
@@ -190,25 +189,31 @@ class MakeCircle(Mission):
             return False
 
 class TakeOff(Mission):
-    def __init__(self, uav, rate):
+    def __init__(self):
         super(TakeOff, self).__init__(uav, rate)
         self.setpoint = None
 
-    def mission_started(self):
+    def mission_started(self, uav, rate):
         super(TakeOff, self).mission_started()
-        uav_start_pose = self.uav.get_current_pose()
-        self.setpoint = SetpointPosition(self.uav, self.rate, uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
+        uav_start_pose = uav.get_current_pose()
+        pos = Vector3(uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
+        self.setpoint = SetpointPosition(pos)
+        self.setpoint.mission_started(uav, rate)
 
-    def mission_loop(self):
-        self.uav.arm(True)
-        self.uav.set_offboard()
 
-        self.setpoint.mission_loop()
+    def mission_loop(self, uav, rate):
+        uav.arm(True)
+        uav.set_offboard()
+
+        self.setpoint.mission_loop(uav, rate)
     
-    def mission_ended(self):
-        return self.setpoint.mission_ended()
+    def mission_ended(self, uav, rate):
+        return self.setpoint.mission_ended(uav, rate)
 
-
+    def deserialize_from_buffer(self, buffer):
+        pass
+    def serialize_into_buffer(self, buffer):
+        pass
 
 
 def get_missiontype_to_constructor():

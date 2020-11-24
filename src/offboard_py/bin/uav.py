@@ -37,6 +37,9 @@ class UAV(object):
         self.arming_cl = rospy.ServiceProxy(uav_name +'/mavros/cmd/arming', CommandBool)
         self.takeoff_cl = rospy.ServiceProxy(uav_name +'/mavros/cmd/takeoff', CommandTOL)
         self.change_mode = rospy.ServiceProxy(uav_name +'/mavros/set_mode', SetMode)
+
+        self.sub_mission = rospy.Subscriber(uav_name + '/mission_assign', String, self._add_mission_from_topic)
+
         #a = SP.PoseStamped()
         #a.pose.position.x
         # current physical position
@@ -64,7 +67,8 @@ class UAV(object):
         buffer = DataBuffer.from_string(topic)
         missionFactory = MissionFactory(self.missiontype_to_constructor)
         mission = missionFactory.mission_from_buffer(buffer)
-        self.active_mission_threads.append(mission, self, self.rate)
+        mission_thread = MissionThread(mission, self, self.rate)
+        self.active_mission_threads.append(mission_thread)
 
     def assign_mission(self, mission, uav_name):
         buffer = DataBuffer()
