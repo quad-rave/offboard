@@ -31,7 +31,7 @@ def start_missions():
     rospy.init_node('destroyer')
     rate = rospy.Rate(10) 
 
-
+    #define the UAV objects
     uavs = []
     for i in range(3):
         uav = UAV("uav" + str(i))
@@ -39,11 +39,13 @@ def start_missions():
 
     # define a leader mission and make it into a string
     leader_mission = FormationLeader()
-    mission_factory = MissionFactory(get_missiontype_to_constructor())
-    mission_buffer = mission_factory.buffer_from_mission(leader_mission)
+
+    # make the mission into a string msg
+    mission_buffer = DataBuffer()
+    leader_mission.object_into_buffer(buffer)
     msg = mission_buffer.to_string()
 
-    # publish the msg to assign the mission to the leader
+    # publish the msg, to assign the mission to the leader
     topic = "uav0" +'/mission_assign'
     mission_pub = rospy.Publisher(topic, String, queue_size=10)
     mission_pub.publish(msg)

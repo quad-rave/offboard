@@ -22,6 +22,16 @@ from geometry_msgs.msg import Vector3
 from buffer import DataBuffer
 from missions import *
 
+class MissionThread:
+    def __init__(self, mission, uav, rate):
+        self.mission = mission
+        self.rate = rate
+        self.uav = uav
+        thread.start_new_thread(self.apply_mission, ())
+    def apply_mission(self):
+        time.sleep(1) # wait for subscribers to recieve first info
+        self.mission.execute_mission(self.uav, self.rate)
+
 class UAV(object):
     # access uav internal topics
     # handle missions
@@ -48,31 +58,23 @@ class UAV(object):
             stamp=rospy.Time.now()),    # stamp should update
         )
         self._last_target_pose = None
-        self.missiontype_to_constructor = get_missiontype_to_constructor()
         self.rate = rospy.Rate(10) 
         self.active_mission_threads = []
 
-    class MissionThread:
-        def __init__(self, mission, uav, rate):
-            self.mission = mission
-            self.rate = rate
-            self.uav = uav
-            thread.start_new_thread(self.apply_mission, ())
-        def apply_mission(self):
-            time.sleep(1) # wait for subscribers to recieve first info
-            self.mission.execute_mission(self.uav, self.rate)
+
 
     def _add_mission_from_topic(self, topic):
         print(self.uav_name + " recieved a mission")
         buffer = DataBuffer.from_string(topic)
-        missionFactory = MissionFactory(self.missiontype_to_constructor)
-        mission = missionFactory.mission_from_buffer(buffer)
+
+        mission = Mission.object_from_buffer(buffer)
         mission_thread = MissionThread(mission, self, self.rate)
         self.active_mission_threads.append(mission_thread)
 
     # assign mission to any uav, to used by leader by any uav can assign any mission to any other uav
     def assign_mission(self, mission, uav_name):
-        buffer = MissionFactory.buffer_from_mission(mission)
+        buffer = DataBuffer()
+        mission.object_into_buffer(buffer)
         msg = buffer.to_string()
         mission_pub = rospy.Publisher(uav_name +'/mission_assign', String, queue_size=10)
         mission_pub.publish(msg)
