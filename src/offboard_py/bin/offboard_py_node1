@@ -343,7 +343,7 @@ class Mission(object):
         constructor = missiontype_to_constructor[buffer.read_int()]
 
         mission_obj =  constructor()
-        obj.deserialize_from_buffer(buffer)
+        obj.deserialize_data_from_buffer(buffer)
 
     def deserialize_from_buffer(self, buffer):
         raise Exception("Mission does not implement required method")

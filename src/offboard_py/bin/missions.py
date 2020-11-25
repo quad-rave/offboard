@@ -11,53 +11,65 @@ from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 
 class MissionFactory(object):
-    def __init__(self, missiontype_to_constructor):
+    def __init__(self):
+        missiontype_to_constructor = TwoWayDict()
+        missiontype_to_constructor.add(0, Helix)
+        missiontype_to_constructor.add(1, Wait)
+        missiontype_to_constructor.add(2, GoAndWait)
+        missiontype_to_constructor.add(3, MakeCircle)
+        missiontype_to_constructor.add(4, TakeOff)
+        missiontype_to_constructor.add(5, SetpointPosition)
+        missiontype_to_constructor.add(6, FormationLeader)
+        missiontype_to_constructor.add(7, FormationSlave)
         self.missiontype_to_constructor = missiontype_to_constructor
-        self.mission_from_buffer
+
     
     def mission_from_buffer(self, buffer):
         mission_class = self.missiontype_to_constructor.get_value(buffer.read_int())
 
-        mission =  mission_class()
-        mission.deserialize_from_buffer(buffer)
-        return mission
+        mission_obj = mission_class()
+        mission_obj.deserialize_data_from_buffer(buffer)
+        return 
 
-    def buffer_from_mission(self, mission):
-        buffer = DataBuffer()
+    def mission_into_buffer(self, buffer, mission):
         mission_type = self.missiontype_to_constructor.get_key(type(mission))
         buffer.write_int(mission_type)
-        mission.serialize_into_buffer(buffer)
-        return buffer
+        mission.serialize_data_into_buffer(buffer)
+
 
 class Mission(object):
-    # constuctor paramaters must all have default values, or there will be issues with MissionFactory
+    # constuctor paramaters must all have default values, or there will be issues with serialization/deserialization
+
     def __init__(self):
-        pass
-        
+        self.start_time = None
+        self.type = -1
+
     def execute_mission(self, uav, rate):
         self.uav = uav
         self.rate = rate
 
-        self.mission_started(uav, rate)
+        self.mission_started(self, uav, rate)
 
-        while(True):
-            if(self.mission_ended(uav, rate)):
+        while (True):
+            if (self.mission_ended(uav, rate)):
                 break
             else:
                 self.mission_loop(uav, rate)
             self.rate.sleep()
 
 
-    def deserialize_from_buffer(self, buffer):
-        pass
-        #raise Exception("Mission does not implement required method")
 
-    def serialize_into_buffer(self, buffer):
+    # serialize/deserialize the data only, no object creation, if you want to make whole object into string, use issionFactory
+    def deserialize_data_from_buffer(self, buffer):
         pass
-        #raise Exception("Mission does not implement required method")
+        # raise Exception("Mission does not implement required method")
+
+    def serialize_data_into_buffer(self, buffer):
+        pass
+        # raise Exception("Mission does not implement required method")
 
     def mission_started(self, uav, rate):
-        self.start_time = self.uav.get_current_time()
+        self.start_time = uav.get_current_time()
         pass
 
     def mission_loop(self, uav, rate):
@@ -71,20 +83,23 @@ class Mission(object):
         return sincestart
 
 class FormationLeader(Mission):
+
     def __init__(self):
         self.target_pos_infos = []
     
     def mission_started(self,uav,rate):
+        print("d")
         slave_mission = FormationSlave()
         for i in range(3):
             slave_name = "uav" + str(uav)
             position_target_info = VectorInfo(slave_name + "/formation_mission/position_target")
             self.target_pos_infos.append(position_target_info)
             uav.assign_mission(slave_mission, slave_name)
+        print("e")
 
     def mission_loop(self, uav, rate):
         for i in range(3):
-            position_target_info = target_pos_infos[i]
+            position_target_info = self.target_pos_infos[i]
             position_target_info.value = Vector3(i * 3, self.get_time_since_start * 0.1 , 5)
             position_target_info.publish_data()
 
@@ -99,7 +114,7 @@ class FormationSlave(Mission):
         takeoff.execute_mission(uav, rate)
     
     def mission_loop(self, uav, rate):
-        self.setpoint.target_position = target_pos_info.value
+        self.setpoint.target_position = self.target_pos_info.value
         self.setpoint.mission_loop()
 
 class SetpointPosition(Mission):
@@ -112,10 +127,10 @@ class SetpointPosition(Mission):
     
         
 
-    def deserialize_from_buffer(self, buffer):
+    def deserialize_data_from_buffer(self, buffer):
         self.target_position = buffer.read_vector3()
         
-    def serialize_into_buffer(self, buffer):
+    def serialize_data_into_buffer(self, buffer):
         buffer.write_vector3(self.target_position)
 
     
@@ -233,6 +248,7 @@ class MakeCircle(Mission):
 class TakeOff(Mission):
     def __init__(self):
         super(TakeOff, self).__init__(uav, rate)
+        self.type = 4
         self.setpoint = None
 
     def mission_started(self, uav, rate):
@@ -252,20 +268,9 @@ class TakeOff(Mission):
     def mission_ended(self, uav, rate):
         return self.setpoint.mission_ended(uav, rate)
 
-    def deserialize_from_buffer(self, buffer):
+    def deserialize_data_from_buffer(self, buffer):
         pass
-    def serialize_into_buffer(self, buffer):
+    def serialize_data_into_buffer(self, buffer):
         pass
 
 
-def get_missiontype_to_constructor():
-    missiontype_to_constructor = TwoWayDict()
-    missiontype_to_constructor.add(0, Helix)
-    missiontype_to_constructor.add(1, Wait)
-    missiontype_to_constructor.add(2, GoAndWait)
-    missiontype_to_constructor.add(3, MakeCircle)
-    missiontype_to_constructor.add(4, TakeOff)
-    missiontype_to_constructor.add(5, SetpointPosition)
-    missiontype_to_constructor.add(6, FormationLeader)
-    missiontype_to_constructor.add(7, FormationSlave)
-    return missiontype_to_constructor

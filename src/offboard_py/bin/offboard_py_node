@@ -16,22 +16,23 @@ from mavros_msgs.srv import CommandTOL
 from mavros_msgs.srv import CommandBool
 from std_msgs.msg import String
 from mavros import command
-#from mavros_msgs.msg import 
-#from mavsdk import System
+# from mavros_msgs.msg import
+# from mavsdk import System
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 from missions import *
+
 
 ## New task: selecting a leader which give commands from the gcs to the rest of the group
 # the command is applied by the group.
 # How do we make the connections 
 # Create a mission which accepts its leader
 
-def start_missions():   
+def start_missions():
     rospy.init_node('destroyer')
-    rate = rospy.Rate(10) 
+    rate = rospy.Rate(10)
 
-
+    # define the UAV objects
     uavs = []
     for i in range(3):
         uav = UAV("uav" + str(i))
@@ -39,24 +40,21 @@ def start_missions():
 
     # define a leader mission and make it into a string
     leader_mission = FormationLeader()
-    mission_factory = MissionFactory(get_missiontype_to_constructor())
-    mission_buffer = mission_factory.buffer_from_mission(leader_mission)
-    msg = mission_buffer.to_string()
 
-    # publish the msg to assign the mission to the leader
-    topic = "uav0" +'/mission_assign'
+    # make the mission into a string msg
+    mission_factory = MissionFactory()
+    mission_buffer = DataBuffer()
+    mission_factory.mission_into_buffer(mission_buffer, leader_mission)
+    msg = mission_buffer.to_string()
+    print("mission msg: " + msg)
+    # publish the msg, to assign the mission to the leader
+    topic = "uav0" + "/mission_assign"
     mission_pub = rospy.Publisher(topic, String, queue_size=10)
     mission_pub.publish(msg)
-        
-    
-        
+    print("a")
+
     while input() != '.':
         time.sleep()
-
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -64,7 +62,6 @@ if __name__ == '__main__':
         start_missions()
     except rospy.ROSInterruptException:
         pass
-
 
 '''
 class Commander(UAV):
