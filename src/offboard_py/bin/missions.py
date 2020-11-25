@@ -11,28 +11,76 @@ from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 
 class MissionFactory(object):
-    def __init__(self, missiontype_to_constructor):
+    def __init__(self):
+        missiontype_to_constructor = TwoWayDict()
+        missiontype_to_constructor.add(0, Helix)
+        missiontype_to_constructor.add(1, Wait)
+        missiontype_to_constructor.add(2, GoAndWait)
+        missiontype_to_constructor.add(3, MakeCircle)
+        missiontype_to_constructor.add(4, TakeOff)
+        missiontype_to_constructor.add(5, SetpointPosition)
+        missiontype_to_constructor.add(6, FormationLeader)
+        missiontype_to_constructor.add(7, FormationSlave)
         self.missiontype_to_constructor = missiontype_to_constructor
-        self.mission_from_buffer
+
     
     def mission_from_buffer(self, buffer):
         mission_class = self.missiontype_to_constructor.get_value(buffer.read_int())
 
-        mission_obj =  mission_class()
+        mission_obj = mission_class()
         mission_obj.deserialize_data_from_buffer(buffer)
         return 
 
-    def buffer_from_mission(self, mission):
-        buffer = DataBuffer()
-        mission_type = self.missiontype_to_constructor.get_key(mission)
+    def mission_into_buffer(self, buffer, mission):
+        mission_type = self.missiontype_to_constructor.get_key(type(mission))
         buffer.write_int(mission_type)
         mission.serialize_data_into_buffer(buffer)
-        return buffer
 
 
 class Mission(object):
+    # constuctor paramaters must all have default values, or there will be issues with serialization/deserialization
+
     def __init__(self):
+        self.start_time = None
+        self.type = -1
+
+    def execute_mission(self, uav, rate):
+        self.uav = uav
+        self.rate = rate
+
+        self.mission_started(self, uav, rate)
+
+        while (True):
+            if (self.mission_ended(uav, rate)):
+                break
+            else:
+                self.mission_loop(uav, rate)
+            self.rate.sleep()
+
+
+
+    # serialize/deserialize the data only, no object creation, if you want to make whole object into string, use issionFactory
+    def deserialize_data_from_buffer(self, buffer):
         pass
+        # raise Exception("Mission does not implement required method")
+
+    def serialize_data_into_buffer(self, buffer):
+        pass
+        # raise Exception("Mission does not implement required method")
+
+    def mission_started(self, uav, rate):
+        self.start_time = uav.get_current_time()
+        pass
+
+    def mission_loop(self, uav, rate):
+        pass
+
+    def mission_ended(self, uav, rate):
+        pass
+
+    def get_time_since_start(self, uav, rate):
+        sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
+        return sincestart
 
 class FormationLeader(Mission):
 
@@ -40,12 +88,14 @@ class FormationLeader(Mission):
         self.target_pos_infos = []
     
     def mission_started(self,uav,rate):
+        print("d")
         slave_mission = FormationSlave()
         for i in range(3):
             slave_name = "uav" + str(uav)
             position_target_info = VectorInfo(slave_name + "/formation_mission/position_target")
             self.target_pos_infos.append(position_target_info)
             uav.assign_mission(slave_mission, slave_name)
+        print("e")
 
     def mission_loop(self, uav, rate):
         for i in range(3):
@@ -224,79 +274,3 @@ class TakeOff(Mission):
         pass
 
 
-class Mission(object):
-    # constuctor paramaters must all have default values, or there will be issues with serialization/deserialization
-    missiontype_to_constructor = TwoWayDict()
-    missiontype_to_constructor.add(0, Helix)
-    missiontype_to_constructor.add(1, Wait)
-    missiontype_to_constructor.add(2, GoAndWait)
-    missiontype_to_constructor.add(3, MakeCircle)
-    missiontype_to_constructor.add(4, TakeOff)
-    missiontype_to_constructor.add(5, SetpointPosition)
-    missiontype_to_constructor.add(6, FormationLeader)
-    missiontype_to_constructor.add(7, FormationSlave)
-
-    def __init__(self):
-        self.start_time = None
-        self.type = -1
-
-    def execute_mission(self, uav, rate):
-        self.uav = uav
-        self.rate = rate
-
-        self.mission_started(self, uav, rate)
-
-        while (True):
-            if (self.mission_ended(uav, rate)):
-                break
-            else:
-                self.mission_loop(uav, rate)
-            self.rate.sleep()
-
-    # serialize/deserialize data + type, object_from_buffer creates object
-    def object_from_buffer(buffer):
-        type_int = buffer.read_int()
-        constructor = Mission.missiontype_to_constructor.get_value(type_int)
-        mission = constructor()
-        mission.deserialize_data_from_buffer(buffer)
-        return mission
-
-    def object_into_buffer(self, buffer):
-        type_int = Mission.missiontype_to_constuctor.get_key(self)
-        buffer.write_int(type_int)
-        self.serialize_data_into_buffer(buffer)
-
-    # serialize/deserialize the data only, no object creation
-    def deserialize_data_from_buffer(self, buffer):
-        pass
-        # raise Exception("Mission does not implement required method")
-
-    def serialize_data_into_buffer(self, buffer):
-        pass
-        # raise Exception("Mission does not implement required method")
-
-    def mission_started(self, uav, rate):
-        self.start_time = uav.get_current_time()
-        pass
-
-    def mission_loop(self, uav, rate):
-        pass
-
-    def mission_ended(self, uav, rate):
-        pass
-
-    def get_time_since_start(self, uav, rate):
-        sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
-        return sincestart
-
-def get_missiontype_to_constructor():
-    missiontype_to_constructor = TwoWayDict()
-    missiontype_to_constructor.add(0, Helix)
-    missiontype_to_constructor.add(1, Wait)
-    missiontype_to_constructor.add(2, GoAndWait)
-    missiontype_to_constructor.add(3, MakeCircle)
-    missiontype_to_constructor.add(4, TakeOff)
-    missiontype_to_constructor.add(5, SetpointPosition)
-    missiontype_to_constructor.add(6, FormationLeader)
-    missiontype_to_constructor.add(7, FormationSlave)
-    return missiontype_to_constructor

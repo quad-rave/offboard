@@ -48,7 +48,7 @@ class UAV(object):
         self.change_mode = rospy.ServiceProxy(uav_name +'/mavros/set_mode', SetMode)
 
         self.sub_mission = rospy.Subscriber(uav_name + '/mission_assign', String, self._add_mission_from_topic)
-
+        print("b")
         #a = SP.PoseStamped()
         #a.pose.position.x
         # current physical position
@@ -60,21 +60,22 @@ class UAV(object):
         self._last_target_pose = None
         self.rate = rospy.Rate(10) 
         self.active_mission_threads = []
-
+        print("c")
 
 
     def _add_mission_from_topic(self, topic):
         print(self.uav_name + " recieved a mission")
         buffer = DataBuffer.from_string(topic)
-
-        mission = Mission.object_from_buffer(buffer)
+        mission_factory = MissionFactory()
+        mission = mission_factory.mission_from_buffer(buffer)
         mission_thread = MissionThread(mission, self, self.rate)
         self.active_mission_threads.append(mission_thread)
 
     # assign mission to any uav, to used by leader by any uav can assign any mission to any other uav
     def assign_mission(self, mission, uav_name):
         buffer = DataBuffer()
-        mission.object_into_buffer(buffer)
+        mission_factory = MissionFactory()
+        mission_factory.mission_into_buffer(buffer,mission)
         msg = buffer.to_string()
         mission_pub = rospy.Publisher(uav_name +'/mission_assign', String, queue_size=10)
         mission_pub.publish(msg)
