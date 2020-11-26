@@ -3,7 +3,7 @@
 
 # this is for type serialization/deserialization purposes
 from buffer import DataBuffer
-from uav import UAV
+#from uav import UAV
 from networked_info import *
 from utility import TwoWayDict
 
@@ -29,7 +29,7 @@ class MissionFactory(object):
 
         mission_obj = mission_class()
         mission_obj.deserialize_data_from_buffer(buffer)
-        return 
+        return mission_obj
 
     def mission_into_buffer(self, buffer, mission):
         mission_type = self.missiontype_to_constructor.get_key(type(mission))
@@ -48,7 +48,7 @@ class Mission(object):
         self.uav = uav
         self.rate = rate
 
-        self.mission_started(self, uav, rate)
+        self.mission_started(uav, rate)
 
         while (True):
             if (self.mission_ended(uav, rate)):
@@ -88,11 +88,15 @@ class FormationLeader(Mission):
         self.target_pos_infos = []
     
     def mission_started(self,uav,rate):
+        print("leader mission started")
+        super(FormationLeader, self).mission_started(uav, rate)
         print("d")
         slave_mission = FormationSlave()
         for i in range(3):
-            slave_name = "uav" + str(uav)
-            position_target_info = VectorInfo(slave_name + "/formation_mission/position_target")
+            slave_name = "uav" + str(i)
+            topic = slave_name + "/formation_mission/position_target"
+            position_target_info = VectorInfo(topic)
+            print("publishing to: " + topic)
             self.target_pos_infos.append(position_target_info)
             uav.assign_mission(slave_mission, slave_name)
         print("e")
@@ -100,7 +104,7 @@ class FormationLeader(Mission):
     def mission_loop(self, uav, rate):
         for i in range(3):
             position_target_info = self.target_pos_infos[i]
-            position_target_info.value = Vector3(i * 3, self.get_time_since_start * 0.1 , 5)
+            position_target_info.value = Vector3(i * 3, self.get_time_since_start(uav, rate) * 0.1 , 5)
             position_target_info.publish_data()
 
 class FormationSlave(Mission):
@@ -109,13 +113,17 @@ class FormationSlave(Mission):
         self.setpoint = SetpointPosition()
     
     def mission_started(self,uav,rate):
-        self.target_pos_info = VectorInfo("uav" + str(uav) + "/formation_mission/position_target")
+        print("slave mission started")
+        super(FormationSlave, self).mission_started(uav, rate)
+        topic = uav.uav_name + "/formation_mission/position_target"
+        self.target_pos_info = VectorInfo(topic)
+        print("subscribed to: " + topic)
         takeoff = TakeOff()
         takeoff.execute_mission(uav, rate)
     
     def mission_loop(self, uav, rate):
         self.setpoint.target_position = self.target_pos_info.value
-        self.setpoint.mission_loop()
+        self.setpoint.mission_loop(uav, rate)
 
 class SetpointPosition(Mission):
     """
@@ -142,9 +150,9 @@ class SetpointPosition(Mission):
 
         def is_near(cur, tar):
             return abs(cur - tar) < 0.5
-        if is_near(current_pos.pose.position.x, self.x) and \
-            is_near(current_pos.pose.position.y, self.y) and \
-            is_near(current_pos.pose.position.z, self.z):
+        if is_near(current_pos.pose.position.x, self.target_position.x) and \
+            is_near(current_pos.pose.position.y, self.target_position.y) and \
+            is_near(current_pos.pose.position.z, self.target_position.z):
             return True
         return False
 
@@ -247,12 +255,12 @@ class MakeCircle(Mission):
 
 class TakeOff(Mission):
     def __init__(self):
-        super(TakeOff, self).__init__(uav, rate)
+        super(TakeOff, self).__init__()
         self.type = 4
         self.setpoint = None
 
     def mission_started(self, uav, rate):
-        super(TakeOff, self).mission_started()
+        super(TakeOff, self).mission_started(uav, rate)
         uav_start_pose = uav.get_current_pose()
         pos = Vector3(uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
         self.setpoint = SetpointPosition(pos)

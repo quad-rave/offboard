@@ -21,13 +21,15 @@ from mavros import command
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 from missions import *
+from uav import UAV
 
 
 ## New task: selecting a leader which give commands from the gcs to the rest of the group
 # the command is applied by the group.
 # How do we make the connections 
 # Create a mission which accepts its leader
-
+def hmm(topic):
+    print("hmmmmmmmm: " + topic.data)
 def start_missions():
     rospy.init_node('destroyer')
     rate = rospy.Rate(10)
@@ -38,23 +40,19 @@ def start_missions():
         uav = UAV("uav" + str(i))
         uavs.append(uav)
 
-    # define a leader mission and make it into a string
+    # define a leader mission and assign it through one of the uav's, it doesnt matter which one
     leader_mission = FormationLeader()
+    uavs[0].assign_mission(leader_mission, "uav0")
 
-    # make the mission into a string msg
-    mission_factory = MissionFactory()
-    mission_buffer = DataBuffer()
-    mission_factory.mission_into_buffer(mission_buffer, leader_mission)
-    msg = mission_buffer.to_string()
-    print("mission msg: " + msg)
-    # publish the msg, to assign the mission to the leader
-    topic = "uav0" + "/mission_assign"
-    mission_pub = rospy.Publisher(topic, String, queue_size=10)
-    mission_pub.publish(msg)
-    print("a")
+    # burda bir topic denemesi yapayım dedim, kafayı yedirtiyor bana, bu kod nasıl çalışmaz?
+    # biz bunu daha önce yapmadık mı?
+    pub = rospy.Publisher("hmmtopic", String, queue_size=10)
+    sub = rospy.Subscriber("hmmtopic", String, hmm)
+    pub.publish("my data")
+    time.sleep(2)
+    input()
+    return
 
-    while input() != '.':
-        time.sleep()
 
 
 if __name__ == '__main__':

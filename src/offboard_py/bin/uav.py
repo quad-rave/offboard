@@ -15,12 +15,13 @@ from mavros_msgs.srv import CommandTOL
 from mavros_msgs.srv import CommandBool
 from std_msgs.msg import String
 from mavros import command
-#from mavros_msgs.msg import 
-#from mavsdk import System
-from geometry_msgs.msg import TwistStamped
+# from mavros_msgs.msg import
+# from mavsdk import System
+from geometry_msgs.msg import TwistStamped, Twist
 from geometry_msgs.msg import Vector3
 from buffer import DataBuffer
 from missions import *
+
 
 class MissionThread:
     def __init__(self, mission, uav, rate):
@@ -28,44 +29,47 @@ class MissionThread:
         self.rate = rate
         self.uav = uav
         thread.start_new_thread(self.apply_mission, ())
+
     def apply_mission(self):
-        time.sleep(1) # wait for subscribers to recieve first info
+        time.sleep(1)  # wait for subscribers to recieve first info
         self.mission.execute_mission(self.uav, self.rate)
+
 
 class UAV(object):
     # access uav internal topics
     # handle missions
     def __init__(self, uav_name):
         self.uav_name = uav_name
-        self.pub_state = rospy.Publisher("sqr_state", String, queue_size = 10)
-        self.pub_pose = rospy.Publisher(uav_name +'/mavros/setpoint_position/local', SP.PoseStamped, queue_size=10)
-        self.sub_pose = rospy.Subscriber(uav_name + '/mavros/local_position/pose', SP.PoseStamped, self._read_position_from_topic)
-        self.pub_twist =  rospy.Publisher(uav_name + '/mavros/setpoint_velocity/cmd_vel_unstamped',TwistStamped, queue_size=10)
+        self.pub_state = rospy.Publisher("sqr_state", String, queue_size=10)
+        self.pub_pose = rospy.Publisher(uav_name + '/mavros/setpoint_position/local', SP.PoseStamped, queue_size=10)
+        self.sub_pose = rospy.Subscriber(uav_name + '/mavros/local_position/pose', SP.PoseStamped,
+                                         self._read_position_from_topic)
+        self.pub_twist = rospy.Publisher(uav_name + '/mavros/setpoint_velocity/cmd_vel_unstamped', Twist,
+                                         queue_size=10) # type was TwistStamped, it wa causing error but was still working
 
         self.offb_set_mode = SetMode()
-        self.arming_cl = rospy.ServiceProxy(uav_name +'/mavros/cmd/arming', CommandBool)
-        self.takeoff_cl = rospy.ServiceProxy(uav_name +'/mavros/cmd/takeoff', CommandTOL)
-        self.change_mode = rospy.ServiceProxy(uav_name +'/mavros/set_mode', SetMode)
+        self.arming_cl = rospy.ServiceProxy(uav_name + '/mavros/cmd/arming', CommandBool)
+        self.takeoff_cl = rospy.ServiceProxy(uav_name + '/mavros/cmd/takeoff', CommandTOL)
+        self.change_mode = rospy.ServiceProxy(uav_name + '/mavros/set_mode', SetMode)
 
         self.sub_mission = rospy.Subscriber(uav_name + '/mission_assign', String, self._add_mission_from_topic)
-        print("b")
-        #a = SP.PoseStamped()
-        #a.pose.position.x
+        print("listening to mission assign: " + uav_name + "/mission_assign")
+        # a = SP.PoseStamped()
+        # a.pose.position.x
         # current physical position
-        self.pose_stamped =  SP.PoseStamped(
+        self.pose_stamped = SP.PoseStamped(
             header=SP.Header(
-            frame_id="base_footprint",  # no matter, plugin don't use TF
-            stamp=rospy.Time.now()),    # stamp should update
+                frame_id="base_footprint",  # no matter, plugin don't use TF
+                stamp=rospy.Time.now()),  # stamp should update
         )
         self._last_target_pose = None
-        self.rate = rospy.Rate(10) 
+        self.rate = rospy.Rate(10)
         self.active_mission_threads = []
         print("c")
 
-
     def _add_mission_from_topic(self, topic):
         print(self.uav_name + " recieved a mission")
-        buffer = DataBuffer.from_string(topic)
+        buffer = DataBuffer.from_string(topic.data)
         mission_factory = MissionFactory()
         mission = mission_factory.mission_from_buffer(buffer)
         mission_thread = MissionThread(mission, self, self.rate)
@@ -75,14 +79,16 @@ class UAV(object):
     def assign_mission(self, mission, uav_name):
         buffer = DataBuffer()
         mission_factory = MissionFactory()
-        mission_factory.mission_into_buffer(buffer,mission)
+        mission_factory.mission_into_buffer(buffer, mission)
         msg = buffer.to_string()
-        mission_pub = rospy.Publisher(uav_name +'/mission_assign', String, queue_size=10)
+        print("try assign mission")
+        mission_pub = rospy.Publisher(uav_name + '/mission_assign', String, queue_size=10)
         mission_pub.publish(msg)
+        print("published assign mission: " + uav_name + '/mission_assign' + ", data: " + msg)
 
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic
-    
+
     def get_last_target_pose(self):
         return self._last_target_pose
 
@@ -92,19 +98,17 @@ class UAV(object):
     def get_current_pose(self):
         return self.pose_stamped
 
-
-    def set_target_velocity(self, x,y,z):
+    def set_target_velocity(self, x, y, z):
         msg = TwistStamped()
-        msg.twist.linear = Vector3(x,y,z)
+        msg.twist.linear = Vector3(x, y, z)
         self.pub_twist.publish(msg)
 
     # send target position to drone
-    def set_target_pose(self,x,y,z):
-
+    def set_target_pose(self, x, y, z):
         msg = SP.PoseStamped(
             header=SP.Header(
-            frame_id="base_footprint",  # no matter, plugin don't use TF
-            stamp=rospy.Time.now()),    # stamp should update
+                frame_id="base_footprint",  # no matter, plugin don't use TF
+                stamp=rospy.Time.now()),  # stamp should update
         )
 
         msg.pose.position.x = x
@@ -117,13 +121,13 @@ class UAV(object):
         msg.pose.orientation = SP.Quaternion(*quaternion)
         self._last_target_pose = msg
         self.pub_pose.publish(msg)
-        
 
-    def arm(self,bool):
+    def arm(self, bool):
         rospy.wait_for_service(self.uav_name + '/mavros/cmd/arming')
-        response = self.arming_cl(value = True)
-        #rospy.loginfo(response)
+        response = self.arming_cl(value=True)
+        # rospy.loginfo(response)
+
     def set_offboard(self):
         rospy.wait_for_service(self.uav_name + '/mavros/set_mode')
         response = self.change_mode(custom_mode="OFFBOARD")
-        #rospy.loginfo(response)
+        # rospy.loginfo(response)

@@ -5,6 +5,8 @@ from std_msgs.msg import String
 from mavros import command
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
+import rospy
+from buffer import  DataBuffer
 
 class NetworkedInfo(object):
     def __init__(self, topic):
@@ -13,7 +15,7 @@ class NetworkedInfo(object):
     
     # dont override these two:
     def _on_topic_recieve(self,topic):
-        topic_buffer = DataBuffer.from_string(topic)
+        topic_buffer = DataBuffer.from_string(topic.data)
         self.deserialize_from_buffer(topic_buffer)
 
     def publish_data(self):
