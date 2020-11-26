@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # vim:set ts=4 sw=4 et:
+
 import rospy
 import _thread as thread
 import threading
@@ -20,6 +21,44 @@ from mavros import command
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 
+## New task: selecting a leader which give commands from the gcs to the rest of the group
+# the command is applied by the group.
+# How do we make the connections 
+# Create a mission which accepts its leader
+
+class DataBuffer():
+    def __init__(self):
+        self.data = ""
+        self.list = []
+        self.index = 0
+        self.string = ""
+    def to_string(self):
+        self.string = ''.join([str(elem)+"," for elem in self.list]).strip(",")     
+    def from_string(self, value):
+        self.list = self.string.split(",")
+
+    def write_float(self, value):
+        self.list.append(str(value))
+        
+    def read_float(self):
+        return float(self.list.pop())
+
+    def write_vector3(self, vector3):
+        x = vector3.x
+        y = vector3.y
+        z = vector3.z
+        self.write_float(x)
+        self.write_float(y)
+        self.write_float(z)
+
+    def read_vector3(self):
+        x = self.read_float()
+        y = self.read_float()
+        z = self.read_float()
+        return Vector3(x,y,z)
+
+
+
 def start_missions():   
     rospy.init_node('destroyer')
     rate = rospy.Rate(10) 
@@ -32,20 +71,45 @@ def start_missions():
     
     for drone_index, uav_name in enumerate(uav_nameobject.keys()):
         uav = uav_nameobject[uav_name]
+        pose = uav.get_current_pose().pose.position
         
         missions = [
                 TakeOff(uav, rate),
-                GoAndWait(uav, rate, 3,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10)
+
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+                #2 helix
+                Helix(uav, rate, 5, 5, 3),
+                Wait(uav, rate, 1.5),
+                Helix(uav, rate, 5, 5, 3),
+                
+                #Go down
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+
+                #2 helix
+                Helix(uav, rate, 5, 5, 3),
+                Wait(uav, rate, 1.5),
+                Helix(uav, rate, 5, 5, 3),
+
+                #Go down
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+                
+                #2 helix
+                Helix(uav, rate, 5, 5, 3),
+                Wait(uav, rate, 1.5),
+                Helix(uav, rate, 5, 5, 3),
+                
+                GoAndWait(uav, rate, 3,  drone_index * 5, 0, pose.z),
+
+
+                #GoAndWait(uav, rate, 3,  drone_index * 5,0, 5),
+                #MakeCircle(uav, rate, 6, 2),
+                #GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
+                #MakeCircle(uav, rate, 6, 2),
+                #GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
+                #MakeCircle(uav, rate, 6, 2),
+                #GoAndWait(uav, rate, 2,  drone_index * 5,0,10)
                 
                 ] 
-
-
         drone_missions[uav_name] = missions
         
     uav_threads = []
@@ -65,9 +129,58 @@ class UAVThread:
         for mission in self.missions:
             mission.execute_mission()
         
+class NetworkedInfo(object):
+    def __init__(self, topic):
+        self.topic_pub = rospy.Publisher(topic, String, queue_size = 10)
+
+    def publish_msg(self):
+        pass
+
+    def receive_msg(self,topic):
+        DataBuffer buffer = Buffer()
+        buffer.from_string(topic)
+        self.msg = topic
+
+    def set_msg(self, msg):
+        self.msg = msg
+    
+    def get_msg(self):
+        return self.msg
+
+    
+'''
+class FollowerMission:
+    def init(topic):
+        self.posinfo = VectorInfo("/network/uav0/position")
+        self.alldrone_positions =[]
+        for i in range(5):
+        self.alldrone_positions.append(VectorInfo("/network/uav"+ str(i)+ "/position"))
+        
+    def mission_started(self)
+        wait(0.5)
+    
+    def mission_loop(self):
+        self.posinfo.vector3 = uav.position
+        self.postinfo.publish()
+
+        other_pos = self.other_pos.vector3
+    
+'''
+
+class VectorInfo(InfoTransmitter): 
+    def __init__(self, topic):
+        super(VectorInfo, self).__init__(topic)
+        self.vector3 = Vector3()
+
+    def set_msg(self, vector3):
+        self.value = vector3
+        
+    def get_msg(self)
+        return self.vector3
+        
     
 
-class UAV:
+class UAV(object):
     
     def __init__(self, uav_name):
         self.uav_name = uav_name
@@ -88,12 +201,30 @@ class UAV:
             frame_id="base_footprint",  # no matter, plugin don't use TF
             stamp=rospy.Time.now()),    # stamp should update
         )
-        self.twist_stamped = TwistStamped() # delete
+        self._last_target_pose = None
 
+
+    def add_info_transmitter(self, key):
+        pass
+    def remove_info_transmitter(self, key):
+        pass
+
+    def add_info_reciever(self, key):
+        pass
+    def remove_info_reciever(self, key):
+        pass
+
+    def get_info_transmitter(self, key):
+        pass
+    def get_info_transmitter(self, key):
+        pass
 
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic
     
+
+    def get_last_target_pose(self):
+        return self._last_target_pose
 
     def get_current_time(self):
         return rospy.rostime.Time.now()
@@ -124,6 +255,7 @@ class UAV:
         yaw = radians(yaw_degrees)
         quaternion = quaternion_from_euler(0, 0, yaw)
         msg.pose.orientation = SP.Quaternion(*quaternion)
+        self._last_target_pose = msg
         self.pub_pose.publish(msg)
         
 
@@ -135,10 +267,33 @@ class UAV:
         rospy.wait_for_service(self.uav_name + '/mavros/set_mode')
         response = self.change_mode(custom_mode="OFFBOARD")
         #rospy.loginfo(response)
+    '''
+    def add_info_transmitter(self, maps):
+        self.commander_message = maps
+    def get_info_transmitter(self):
+        return self.commander_message
+    '''
 
+'''
+class Commander(UAV):
+    def __init__(self, uav_name, team):
+        super(Commander ,self).__init__(uav_name)
+        self.team = team
+        self.message_topic = None
+    def give_command(self, gcs_message):
+        self. = rospy.Publisher(""super(Commander, self).uav_name, String, queue_size = 10)
+        super(Commander, self).add_info_transmitter(gcs_message)
 
+class Slave(UAV):
+    def __init__(self, uav_name, leader):
+        super(Slave, self).__init__(uav_name)
+        self.leader = leader
+        self.message = None
+    def receive_command(self, gcs_message):
+        self.message = super(Slave, self).get_info_transmitter()
+'''
 
-class Mission:
+class Mission(object):
     def __init__(self, uav, rate):
         self.uav = uav
         self.rate = rate
@@ -170,9 +325,61 @@ class Mission:
         sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
         return sincestart
 
+class Helix(Mission):
+    def __init__(self, uav, rate, period, radius, slope):
+            #x(t) = acos(t),
+            #y(t) = asin(t)
+            #z(t) = bt
+            #slope b/a, pitch 2*pi*b
+        super(Helix ,self).__init__(uav, rate)
+        self.T = period #(sec)
+        self.a = radius
+        self.b = slope * radius
+
+    def mission_started(self):
+        super(Helix ,self).mission_started()
+        self.center = self.uav.get_current_pose().pose.position
+        self.center.x = self.center.x - self.a
+
+    def mission_loop(self):
+        T = self.get_time_since_start() / self.T
+        x = self.a * cos(T * 2 * pi)
+        y = self.a * sin(T * 2 * pi)
+        self.uav.set_target_pose(self.center.x + x, self.center.y + y, self.center.z + self.b)
+
+        dx = - self.a * sin(T * 2 * pi)
+        dy = self.a * cos(T * 2 * pi)
+        dz = self.b
+        self.uav.set_target_velocity(dx, dy, dz)
+
+    def mission_ended(self):
+        if(self.get_time_since_start() > self.T):
+            return True
+        else:
+            return False
+
+class Wait(Mission):
+    ## Bu wait kısmının update'e girmesi lazım mission_loop'da bir setpoint yapılması gerekiyor diğer türlü otopilot kendini anlık failsafe'e alıyor.
+    ## Wait diye bir methodun olması da önemli mesela 2 helix yaptırırken değerleri çekmek çok zor rostopic'den burada halletmek daha kolay olur.
+    def __init__(self, uav, rate, duration):
+        super(Wait, self).__init__(uav, rate)
+        self.go_and_wait = None
+        self.duration = duration
+
+    def mission_started(self):
+        super(Wait, self).mission_started()
+        last_setpoint = self.uav.get_last_target_pose()
+        self.go_and_wait = GoAndWait(self.uav, self.rate, self.duration, last_setpoint.pose.x,last_setpoint.pose.y,last_setpoint.pose.z)
+
+    def mission_loop(self):
+        self.go_and_wait.mission_loop()
+
+    def mission_ended(self):
+        return self.go_and_wait.mission_ended()
+
 class GoAndWait(Mission):
-    def __init__(self, uav, rate, duration, x,y,z):
-        super().__init__(uav, rate)
+    def __init__(self, uav, rate, duration, x, y, z):
+        super(GoAndWait, self).__init__(uav, rate)
         self.setpoint = SetpointPosition(uav, rate, x,y,z)
         self.duration = duration
 
@@ -191,13 +398,13 @@ class GoAndWait(Mission):
 
 class MakeCircle(Mission):
     def __init__(self, uav, rate, period, radius):
-        super().__init__(uav, rate)
+        super(MakeCircle, self).__init__(uav, rate)
         self.period = period
         self.radius = radius
         self.center = None
     
     def mission_started(self):
-        super().mission_started()
+        super(MakeCircle, self).mission_started()
         self.center = self.uav.get_current_pose().pose.position
         self.center.x = self.center.x -self.radius
         
@@ -220,11 +427,11 @@ class MakeCircle(Mission):
 
 class TakeOff(Mission):
     def __init__(self, uav, rate):
-        super().__init__(uav, rate)
+        super(TakeOff, self).__init__(uav, rate)
         self.setpoint = None
 
     def mission_started(self):
-        super().mission_started()
+        super(TakeOff, self).mission_started()
         uav_start_pose = self.uav.get_current_pose()
         self.setpoint = SetpointPosition(self.uav, self.rate, uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
 
@@ -243,7 +450,7 @@ class SetpointPosition(Mission):
     This class sends position targets to FCU's position controller
     """
     def __init__(self,uav, rate,x,y,z):
-        super().__init__(uav, rate)
+        super(SetpointPosition, self).__init__(uav, rate)
         self.x = x
         self.y = y
         self.z = z
