@@ -23,6 +23,7 @@ from buffer import DataBuffer
 from missions import *
 
 
+
 class MissionThread:
     def __init__(self, mission, uav, rate):
         self.mission = mission
@@ -83,8 +84,10 @@ class UAV(object):
         msg = buffer.to_string()
         print("try assign mission")
         mission_pub = rospy.Publisher(uav_name + '/mission_assign', String, queue_size=10)
+        time.sleep(2)
         mission_pub.publish(msg)
         print("published assign mission: " + uav_name + '/mission_assign' + ", data: " + msg)
+        time.sleep(2)
 
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic

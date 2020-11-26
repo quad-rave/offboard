@@ -9,6 +9,7 @@ from utility import TwoWayDict
 
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
+from math import *
 
 class MissionFactory(object):
     def __init__(self):
@@ -85,44 +86,65 @@ class Mission(object):
 class FormationLeader(Mission):
 
     def __init__(self):
+        # these are the NetworkedInfos for sending vector3 data to slaves
         self.target_pos_infos = []
     
     def mission_started(self,uav,rate):
         print("leader mission started")
         super(FormationLeader, self).mission_started(uav, rate)
-        print("d")
+
+        # define a slave mission
         slave_mission = FormationSlave()
         for i in range(3):
             slave_name = "uav" + str(i)
+            # define the vector NetworkedInfo
             topic = slave_name + "/formation_mission/position_target"
             position_target_info = VectorInfo(topic)
-            print("publishing to: " + topic)
             self.target_pos_infos.append(position_target_info)
+
+            # give the slave mission to uav
             uav.assign_mission(slave_mission, slave_name)
-        print("e")
+
 
     def mission_loop(self, uav, rate):
         for i in range(3):
+            # get the NetworkedInfo
             position_target_info = self.target_pos_infos[i]
-            position_target_info.value = Vector3(i * 3, self.get_time_since_start(uav, rate) * 0.1 , 5)
+            # set its value
+            position_target_info.value = Vector3(5, sin(2*pi * self.get_time_since_start(uav, rate) * 0.1) * 10 , i * 5)
+            # publish, next time you see that value, we are on slave mission
             position_target_info.publish_data()
 
 class FormationSlave(Mission):
     def __init__(self):
         self.target_pos_info = None
+        # we are syncing SetpointPosition mission to this mission as usual
         self.setpoint = SetpointPosition()
     
     def mission_started(self,uav,rate):
         print("slave mission started")
         super(FormationSlave, self).mission_started(uav, rate)
+        # define the same networked info here, to communicate with leader
         topic = uav.uav_name + "/formation_mission/position_target"
         self.target_pos_info = VectorInfo(topic)
         print("subscribed to: " + topic)
+
+        # make a new TakeOff mission and wait for its completion 
+        # we cant be a good slave if we dont takeoff first
         takeoff = TakeOff()
         takeoff.execute_mission(uav, rate)
+
+        # syncing a mission to this mission means calling mission_started and mission_loop manually here
+        # synced mission
+        self.setpoint.mission_started(uav, rate)
     
     def mission_loop(self, uav, rate):
+        # target_pos_info is a NetworkedInfo, therefore its updated automatically 
+        # everytime someone calls publish on it
+        # we set parameters of setpoint mission from this NetworkedInfo to move the uav
         self.setpoint.target_position = self.target_pos_info.value
+
+        # synced mission
         self.setpoint.mission_loop(uav, rate)
 
 class SetpointPosition(Mission):
