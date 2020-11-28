@@ -22,6 +22,8 @@ class MissionFactory(object):
         missiontype_to_constructor.add(5, SetpointPosition)
         missiontype_to_constructor.add(6, FormationLeader)
         missiontype_to_constructor.add(7, FormationSlave)
+        missiontype_to_constructor.add(8, TriangleLeader)
+        missiontype_to_constructor.add(9, TriangleSlave)
         self.missiontype_to_constructor = missiontype_to_constructor
 
     
@@ -146,6 +148,8 @@ class FormationSlave(Mission):
 
         # synced mission
         self.setpoint.mission_loop(uav, rate)
+
+
 
 class SetpointPosition(Mission):
     """

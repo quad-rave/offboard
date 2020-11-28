@@ -76,7 +76,7 @@ class UAV(object):
         mission_thread = MissionThread(mission, self, self.rate)
         self.active_mission_threads.append(mission_thread)
 
-    # assign mission to any uav, to used by leader by any uav can assign any mission to any other uav
+    # assign mission to any uav, to beused by leader by any uav can assign any mission to any other uav
     def assign_mission(self, mission, uav_name):
         buffer = DataBuffer()
         mission_factory = MissionFactory()
@@ -98,10 +98,10 @@ class UAV(object):
     def get_current_time(self):
         return rospy.rostime.Time.now()
 
-    def get_current_pose(self):
+    def get_current_pose(self): # this should return vector3
         return self.pose_stamped
 
-    def set_target_velocity(self, x, y, z):
+    def set_target_velocity(self, x, y, z): # this should work with vectors
         msg = TwistStamped()
         msg.twist.linear = Vector3(x, y, z)
         self.pub_twist.publish(msg)

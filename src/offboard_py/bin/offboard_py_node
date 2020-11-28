@@ -42,15 +42,12 @@ def start_missions():
     time.sleep(5)
     # define a leader mission and assign it through one of the uav's, it doesnt matter which one
     leader_mission = FormationLeader()
+    leader_mission.point_cloud = [Vector3(0,0), Vector3(20, 0), Vector3(10, 10)]
+    leader_mission.uav_count = 3
     uavs[0].assign_mission(leader_mission, "uav0")
 
-    # burda bir topic denemesi yapayım dedim, kafayı yedirtiyor bana, bu kod nasıl çalışmaz?
-    # biz bunu daha önce yapmadık mı?
-    sub = rospy.Subscriber("hmmtopic", String, hmm)
-    time.sleep(2)
-    pub = rospy.Publisher("hmmtopic", String, queue_size=10)
-    time.sleep(2)
-    pub.publish("my data")
+
+
     time.sleep(2)
     input()
     return
