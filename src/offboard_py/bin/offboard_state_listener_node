@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 import rospy
-from std_msgs.msg import String
+from offboard_py.msg import String
 import time
         
 
