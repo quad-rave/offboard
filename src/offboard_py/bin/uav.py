@@ -21,7 +21,8 @@ from geometry_msgs.msg import TwistStamped, Twist
 from geometry_msgs.msg import Vector3
 from buffer import DataBuffer
 from missions import *
-
+import numpy as np
+from mission_factory import MissionFactory
 
 
 class MissionThread:
@@ -47,7 +48,8 @@ class UAV(object):
                                          self._read_position_from_topic)
         self.pub_twist = rospy.Publisher(uav_name + '/mavros/setpoint_velocity/cmd_vel_unstamped', Twist,
                                          queue_size=10) # type was TwistStamped, it wa causing error but was still working
-
+        self.sub_vel = rospy.Subscriber(uav_name + '/mavros/local_position/velocity_local', TwistStamped,
+                                                                    self._read_velocity_from_topic)
         self.offb_set_mode = SetMode()
         self.arming_cl = rospy.ServiceProxy(uav_name + '/mavros/cmd/arming', CommandBool)
         self.takeoff_cl = rospy.ServiceProxy(uav_name + '/mavros/cmd/takeoff', CommandTOL)
@@ -63,11 +65,13 @@ class UAV(object):
                 frame_id="base_footprint",  # no matter, plugin don't use TF
                 stamp=rospy.Time.now()),  # stamp should update
         )
+        self.vel_read_topic = Twist()
         self._last_target_pose = None
         self.rate = rospy.Rate(10)
         self.active_mission_threads = []
         print("c")
 
+        
     def _add_mission_from_topic(self, topic):
         print(self.uav_name + " recieved a mission")
         buffer = DataBuffer.from_string(topic.data)
@@ -89,40 +93,59 @@ class UAV(object):
         print("published assign mission: " + uav_name + '/mission_assign' + ", data: " + msg)
         time.sleep(2)
 
+    def _read_velocity_from_topic(self, topic):
+        #print("calback received!*---------------------------------------------")
+        self.vel_read_topic = topic
     def _read_position_from_topic(self, topic):
         self.pose_stamped = topic
+        
 
     def get_last_target_pose(self):
-        return self._last_target_pose
+        return np.array([self._last_target_pose.pos.x,
+                        self._last_target_pose.pos.y,
+                        self._last_target_pose.pos.z])
 
     def get_current_time(self):
         return rospy.rostime.Time.now()
 
     def get_current_pose(self): # this should return vector3
-        return self.pose_stamped
+        return np.array([self.pose_stamped.pose.position.x,
+                                self.pose_stamped.pose.position.y, 
+                                self.pose_stamped.pose.position.z])
 
-    def set_target_velocity(self, x, y, z): # this should work with vectors
-        msg = TwistStamped()
-        msg.twist.linear = Vector3(x, y, z)
+    def get_current_velocity(self):
+        return np.array([self.vel_read_topic.twist.linear.x,  
+                            self.vel_read_topic.twist.linear.y,
+                            self.vel_read_topic.twist.linear.z])
+
+    def set_target_velocity(self, vec): # this should work with vectors
+        msg = Twist()
+        msg_vel = Vector3(vec[0],vec[1],vec[2])
+        msg.linear = msg_vel
+
+        print("vel control")
+        print(msg)
         self.pub_twist.publish(msg)
 
     # send target position to drone
-    def set_target_pose(self, x, y, z):
+    def set_target_pose(self, vec):
+        
         msg = SP.PoseStamped(
             header=SP.Header(
                 frame_id="base_footprint",  # no matter, plugin don't use TF
                 stamp=rospy.Time.now()),  # stamp should update
         )
-
-        msg.pose.position.x = x
-        msg.pose.position.y = y
-        msg.pose.position.z = z
+        msg.pose.position.x = vec[0]
+        msg.pose.position.y = vec[1]
+        msg.pose.position.z = vec[2]
         # For demo purposes we will lock yaw/heading to north.
         yaw_degrees = 0  # North
         yaw = radians(yaw_degrees)
         quaternion = quaternion_from_euler(0, 0, yaw)
         msg.pose.orientation = SP.Quaternion(*quaternion)
         self._last_target_pose = msg
+        print("pos control")
+        print(msg)
         self.pub_pose.publish(msg)
 
     def arm(self, bool):

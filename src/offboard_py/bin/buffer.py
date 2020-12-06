@@ -1,7 +1,6 @@
 from std_msgs.msg import String
 from mavros import command
-from geometry_msgs.msg import TwistStamped
-from geometry_msgs.msg import Vector3
+import numpy as np
 
 class DataBuffer():
     def __init__(self):
@@ -9,6 +8,8 @@ class DataBuffer():
 
     def to_string(self):
         return ''.join([str(elem)+"," for elem in self.list]).strip(",")     
+
+    @staticmethod
     def from_string(value):
         data_buffer = DataBuffer()
         data_buffer.list = value.split(",")
@@ -17,18 +18,18 @@ class DataBuffer():
     def write_int(self, value):
         self.list.append(str(value))
     def read_int(self):
-        return int(self.list.pop())
+        return int(self.list.pop(0))
 
     def write_float(self, value):
         self.list.append(str(value))
         
     def read_float(self):
-        return float(self.list.pop())
+        return float(self.list.pop(0))
 
     def write_vector3(self, vector3):
-        x = vector3.x
-        y = vector3.y
-        z = vector3.z
+        x = vector3[0]
+        y = vector3[1]
+        z = vector3[2]
         self.write_float(x)
         self.write_float(y)
         self.write_float(z)
@@ -37,5 +38,5 @@ class DataBuffer():
         x = self.read_float()
         y = self.read_float()
         z = self.read_float()
-        return Vector3(x,y,z)
+        return np.array([x,y,z])
 

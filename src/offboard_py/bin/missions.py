@@ -11,33 +11,7 @@ from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 from math import *
 
-class MissionFactory(object):
-    def __init__(self):
-        missiontype_to_constructor = TwoWayDict()
-        missiontype_to_constructor.add(0, Helix)
-        missiontype_to_constructor.add(1, Wait)
-        missiontype_to_constructor.add(2, GoAndWait)
-        missiontype_to_constructor.add(3, MakeCircle)
-        missiontype_to_constructor.add(4, TakeOff)
-        missiontype_to_constructor.add(5, SetpointPosition)
-        missiontype_to_constructor.add(6, FormationLeader)
-        missiontype_to_constructor.add(7, FormationSlave)
-        missiontype_to_constructor.add(8, TriangleLeader)
-        missiontype_to_constructor.add(9, TriangleSlave)
-        self.missiontype_to_constructor = missiontype_to_constructor
 
-    
-    def mission_from_buffer(self, buffer):
-        mission_class = self.missiontype_to_constructor.get_value(buffer.read_int())
-
-        mission_obj = mission_class()
-        mission_obj.deserialize_data_from_buffer(buffer)
-        return mission_obj
-
-    def mission_into_buffer(self, buffer, mission):
-        mission_type = self.missiontype_to_constructor.get_key(type(mission))
-        buffer.write_int(mission_type)
-        mission.serialize_data_into_buffer(buffer)
 
 
 class Mission(object):
@@ -113,7 +87,7 @@ class FormationLeader(Mission):
             # get the NetworkedInfo
             position_target_info = self.target_pos_infos[i]
             # set its value
-            position_target_info.value = Vector3(5, sin(2*pi * self.get_time_since_start(uav, rate) * 0.1) * 10 , i * 5)
+            position_target_info.value = np.array([5, sin(2*pi * self.get_time_since_start(uav, rate) * 0.1) * 10 , i * 5])
             # publish, next time you see that value, we are on slave mission
             position_target_info.publish_data()
 
@@ -155,30 +129,27 @@ class SetpointPosition(Mission):
     """
     This class sends position targets to FCU's position controller
     """
-    def __init__(self, target_position = Vector3()):
+    def __init__(self):
         super(SetpointPosition, self).__init__()
-        self.target_position = target_position
+        self.target_position = np.array([0,0,0])
     
-        
-
     def deserialize_data_from_buffer(self, buffer):
         self.target_position = buffer.read_vector3()
         
     def serialize_data_into_buffer(self, buffer):
         buffer.write_vector3(self.target_position)
 
-    
     def mission_loop(self, uav, rate):
-        uav.set_target_pose(self.target_position.x,self.target_position.y,self.target_position.z)
+        uav.set_target_pose(self.target_position)
 
     def mission_ended(self, uav, rate):
         current_pos = uav.get_current_pose()
 
         def is_near(cur, tar):
             return abs(cur - tar) < 0.5
-        if is_near(current_pos.pose.position.x, self.target_position.x) and \
-            is_near(current_pos.pose.position.y, self.target_position.y) and \
-            is_near(current_pos.pose.position.z, self.target_position.z):
+        if is_near(current_pos[0], self.target_position[0]) and \
+            is_near(current_pos[1], self.target_position[1]) and \
+            is_near(current_pos[2], self.target_position[2]):
             return True
         return False
 
@@ -216,8 +187,7 @@ class Helix(Mission):
             return False
 
 class Wait(Mission):
-    ## Bu wait kısmının update'e girmesi lazım mission_loop'da bir setpoint yapılması gerekiyor diğer türlü otopilot kendini anlık failsafe'e alıyor.
-    ## Wait diye bir methodun olması da önemli mesela 2 helix yaptırırken değerleri çekmek çok zor rostopic'den burada halletmek daha kolay olur.
+    
     def __init__(self, uav, rate, duration):
         super(Wait, self).__init__(uav, rate)
         self.go_and_wait = None
@@ -288,8 +258,10 @@ class TakeOff(Mission):
     def mission_started(self, uav, rate):
         super(TakeOff, self).mission_started(uav, rate)
         uav_start_pose = uav.get_current_pose()
-        pos = Vector3(uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
-        self.setpoint = SetpointPosition(pos)
+        pos = uav_start_pose
+        pos[2] += 10
+        self.setpoint = SetpointPosition()
+        self.setpoint.target_position = pos
         self.setpoint.mission_started(uav, rate)
 
 

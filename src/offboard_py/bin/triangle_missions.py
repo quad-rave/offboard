@@ -6,17 +6,17 @@ from buffer import DataBuffer
 #from uav import UAV
 from networked_info import *
 from utility import TwoWayDict
-
+import numpy as np
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 from math import *
 
-from missions import Mission
+from missions import *
 
 
 class TriangleLeader(Mission):
     
-    def __init__(self, ):
+    def __init__(self):
         # these are the NetworkedInfos for sending vector3 data to slaves
         self.target_pos_infos = []
         self.point_cloud = []
@@ -24,15 +24,17 @@ class TriangleLeader(Mission):
 
     def deserialize_data_from_buffer(self, buffer):
         #self.target_position = buffer.read_vector3()
+        print("recieved mission data")
+        print(buffer.to_string())
         size = buffer.read_int()
         for i in range(size):
             self.point_cloud.append(buffer.read_vector3())
-        self.uav_count(buffer.read_int())
+        self.uav_count = buffer.read_int()
         
     def serialize_data_into_buffer(self, buffer):
         #buffer.write_vector3(self.target_position)
         buffer.write_int(len(self.point_cloud))
-        for (vector in self.point_cloud):
+        for vector in self.point_cloud:
             buffer.write_vector3(vector)
         buffer.write_int(self.uav_count)
 
@@ -77,6 +79,7 @@ class TriangleSlave(Mission):
         self.uav_id = None
         self.uav_pos_infos = []
         self.target_pos_info = None
+        self.u_integral = np.array([0.0,0.0,0.0])
 
     def deserialize_data_from_buffer(self, buffer):
         #self.target_position = buffer.read_vector3()
@@ -96,27 +99,73 @@ class TriangleSlave(Mission):
         self.target_pos_info = VectorInfo(topic)
 
         for i in range(self.uav_count):
-            self.uav_pos_infos.append(VectorInfo())
+            #self.uav_pos_infos.append(VectorInfo(topic))
+            self.uav_pos_infos.append(VectorInfo("uav" + str(i) + "/triangle_mission/position_target"))
 
         takeoff = TakeOff()
         takeoff.execute_mission(uav, rate)
 
 
     def mission_loop(self, uav, rate):
-        uav_pos_infos[self.uav_id].value = uav.get_current_pose() # change for the Vector3 ds
-        uav_pos_infos[self.uav_id].publish_data()
+        self.uav_pos_infos[self.uav_id].value = uav.get_current_pose() # change for the Vector3 ds
+        self.uav_pos_infos[self.uav_id].publish_data()
+        print("my id: ", self.uav_id)
+
+        collision_avoidance_u = np.array([0.,0.,0.])
+        i = 0
+        for uav_pos_info in self.uav_pos_infos:
+            if i != self.uav_id:
+                my_pos = uav.get_current_pose()
+                others_pos = uav_pos_info.value
+
+                u = self.get_collision_avoidance_u(my_pos, others_pos)
+                collision_avoidance_u += u
+                
+            i+=1
+
+        targetpos_u = self.get_position_u(my_pos, self.target_pos_info.value)
+        dampen_u = uav.get_current_velocity() * (-0.2)
+
+        #self.u_integral += collision_avoidance_u + targetpos_u
+
+        #target_velocity = uav.get_current_velocity() + self.u_integral
+        #uav.set_target_velocity(target_velocity)
+
+        acceleration = targetpos_u * 3 + dampen_u * 1 + collision_avoidance_u* 1.0
+        #acc_norm = np.linalg.norm(acceleration)
+        #acc_normalized = acceleration / acc_norm
+        #if(acc_norm > 10):
+        #    acceleration = acc_normalized * 10
+        self.u_integral = self.u_integral * 0.65
+        self.u_integral += acceleration * 0.8
+
+        uav.set_target_velocity(uav.get_current_velocity() + acceleration)
+        #print("uav velocity read: ", uav.get_current_velocity())
+        #uav.set_target_velocity(uav.get_current_velocity() + np.array([2.0,0,2.0]))
         
-        #uav.set_target_velocity = 
-
-
-
+    
+    def get_collision_avoidance_u(self, selfpos, otherpos):
+        #u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
+        distance = np.linalg.norm(selfpos - otherpos)
+            
         
-def get_collision_avoidance_u(selfpos, otherpos):
-    #u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
-    distance = np.linalg.norm(selfpos, otherpos)
-    u = alpha * math.exp(- beta * abs(distance))
-    return u
+        if(distance < 5.0):
+            #force_mag = 20 * math.exp(- 2 * abs(distance))
+            force_mag = 15 * math.exp(- 1.5 * abs(distance))
+            #4 * e^(- 0.25 * abs(x))
+        
+            direction = (otherpos - selfpos) / distance
+            force = -direction * force_mag
+            if(self.uav_id == 2):
+                print("selfpos: ", selfpos, "otherpos: ", otherpos)
+                print("distance: ", distance, "force: ", force)
+            return force
+        return np.array([0.0,0.0,0.0])
 
-def get_position_u(selfpos, targetpos):
-    #u_f(i) = kp*sum(p(j) - p(i) - delta_ij) 
+
+    def get_position_u(self, selfpos, targetpos):
+        #u_f(i) = kp*sum(p(j) - p(i) - delta_ij) 
+        u = targetpos - selfpos
+        u = u * 1
+        return u
     
