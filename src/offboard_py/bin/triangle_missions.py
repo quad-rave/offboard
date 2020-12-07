@@ -126,12 +126,12 @@ class TriangleSlave(Mission):
         targetpos_u = self.get_position_u(my_pos, self.target_pos_info.value)
         dampen_u = uav.get_current_velocity() * (-0.2)
 
-        #self.u_integral += collision_avoidance_u + targetpos_u
+        self.u_integral += collision_avoidance_u + targetpos_u
 
         #target_velocity = uav.get_current_velocity() + self.u_integral
         #uav.set_target_velocity(target_velocity)
 
-        acceleration = targetpos_u * 3 + dampen_u * 1 + collision_avoidance_u* 1.0
+        acceleration = targetpos_u * 3 + dampen_u * 0 + collision_avoidance_u* 1.0
         #acc_norm = np.linalg.norm(acceleration)
         #acc_normalized = acceleration / acc_norm
         #if(acc_norm > 10):
@@ -139,28 +139,18 @@ class TriangleSlave(Mission):
         self.u_integral = self.u_integral * 0.65
         self.u_integral += acceleration * 0.8
 
-        uav.set_target_velocity(uav.get_current_velocity() + acceleration)
+        uav.set_target_pose(uav.get_current_pose() + self.u_integral )
         #print("uav velocity read: ", uav.get_current_velocity())
         #uav.set_target_velocity(uav.get_current_velocity() + np.array([2.0,0,2.0]))
         
     
-    def get_collision_avoidance_u(self, selfpos, otherpos):
+    def get_collision_avoidance_u(self, selfpos, otherpos, dist=3):
         #u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
         distance = np.linalg.norm(selfpos - otherpos)
-            
-        
-        if(distance < 5.0):
-            #force_mag = 20 * math.exp(- 2 * abs(distance))
-            force_mag = 15 * math.exp(- 1.5 * abs(distance))
-            #4 * e^(- 0.25 * abs(x))
-        
-            direction = (otherpos - selfpos) / distance
-            force = -direction * force_mag
-            if(self.uav_id == 2):
-                print("selfpos: ", selfpos, "otherpos: ", otherpos)
-                print("distance: ", distance, "force: ", force)
-            return force
-        return np.array([0.0,0.0,0.0])
+        alpha = 1
+        beta = 1
+        return alpha * (math.exp(-beta*distance) - math.exp(-beta*dist)) \
+            if distance < dist else np.array([0.0,0.0,0.0])
 
 
     def get_position_u(self, selfpos, targetpos):
@@ -168,4 +158,17 @@ class TriangleSlave(Mission):
         u = targetpos - selfpos
         u = u * 1
         return u
-    
+''' 
+if(distance < 5.0):
+    #force_mag = 20 * math.exp(- 2 * abs(distance))
+    force_mag = 15 * math.exp(- 1.5 * abs(distance))
+    #4 * e^(- 0.25 * abs(x))
+
+    direction = (otherpos - selfpos) / distance
+    force = -direction * force_mag
+    if(self.uav_id == 2):
+        print("selfpos: ", selfpos, "otherpos: ", otherpos)
+        print("distance: ", distance, "force: ", force)
+    return force
+return np.array([0.0,0.0,0.0])
+'''
