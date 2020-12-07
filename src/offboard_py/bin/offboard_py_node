@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # vim:set ts=4 sw=4 et:
+
 import rospy
 import _thread as thread
 import threading
@@ -9,262 +10,70 @@ import mavros
 from math import *
 from mavros.utils import *
 from mavros import setpoint as SP
-from tf.transformations import quaternion_from_euler
+#from tf.transformations import quaternion_from_euler
 from mavros_msgs.srv import SetMode
 from mavros_msgs.srv import CommandTOL
 from mavros_msgs.srv import CommandBool
 from std_msgs.msg import String
 from mavros import command
-#from mavros_msgs.msg import 
-#from mavsdk import System
+# from mavros_msgs.msg import
+# from mavsdk import System
 from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
+from missions import *
+from uav import UAV
+from mission_factory import MissionFactory
+from triangle_missions import TriangleLeader
 
-def start_missions():   
+## New task: selecting a leader which give commands from the gcs to the rest of the group
+# the command is applied by the group.
+# How do we make the connections 
+# Create a mission which accepts its leader
+def hmm(topic):
+    print("hmmmmmmmm: " + topic.data)
+def start_missions():
     rospy.init_node('destroyer')
-    rate = rospy.Rate(10) 
+    rate = rospy.Rate(10)
 
-    uav_count = 3
-    # uav name : uav object
-    uav_nameobject = {"uav{}".format(i) : UAV("uav{}".format(i)) for i in range(uav_count)}
-    # uav name : uav mission
-    drone_missions = {uav_name: None  for uav_name in uav_nameobject.keys()}
-    
-    for drone_index, uav_name in enumerate(uav_nameobject.keys()):
-        uav = uav_nameobject[uav_name]
-        
-        missions = [
-                TakeOff(uav, rate),
-                GoAndWait(uav, rate, 3,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10),
-                MakeCircle(uav, rate, 6, 2),
-                GoAndWait(uav, rate, 2,  drone_index * 5,0,10)
-                
-                ] 
+    # define the UAV objects
+    uavs = []
+    for i in range(3):
+        uav = UAV("uav" + str(i))
+        uavs.append(uav)
+    time.sleep(5)
+    # define a leader mission and assign it through one of the uav's, it doesnt matter which one
+    leader_mission = TriangleLeader()
+    leader_mission.uav_count = 3 #                               20                10  10
+    leader_mission.point_cloud = [np.array([0,0,5]), np.array([0,0, 5]), np.array([10, 10,5])]
+    uavs[0].assign_mission(leader_mission, "uav0")
+
+    time.sleep(2)
+    input()
+    return
 
 
-        drone_missions[uav_name] = missions
-        
-    uav_threads = []
-    drone_index = 0
-    for uav_name in drone_missions.keys():
-        uav_threads.append(UAVThread(drone_missions[uav_name]))
-        drone_index += 1
-        
-    while input() != '.':
-        time.sleep()
-class UAVThread:
-    def __init__(self, missions):
-        self.missions = missions
-        thread.start_new_thread(self.apply_missions, ())
-    def apply_missions(self):
-        time.sleep(5) # wait for subscribers to recieve first info
-        for mission in self.missions:
-            mission.execute_mission()
-        
-    
-
-class UAV:
-    
-    def __init__(self, uav_name):
-        self.uav_name = uav_name
-        self.pub_state = rospy.Publisher("sqr_state", String, queue_size = 10)
-        self.pub_pose = rospy.Publisher(uav_name +'/mavros/setpoint_position/local', SP.PoseStamped, queue_size=10)
-        self.sub_pose = rospy.Subscriber(uav_name + '/mavros/local_position/pose', SP.PoseStamped, self._read_position_from_topic)
-        self.pub_twist =  rospy.Publisher(uav_name + '/mavros/setpoint_velocity/cmd_vel_unstamped',TwistStamped, queue_size=10)
-
-        self.offb_set_mode = SetMode()
-        self.arming_cl = rospy.ServiceProxy(uav_name +'/mavros/cmd/arming', CommandBool)
-        self.takeoff_cl = rospy.ServiceProxy(uav_name +'/mavros/cmd/takeoff', CommandTOL)
-        self.change_mode = rospy.ServiceProxy(uav_name +'/mavros/set_mode', SetMode)
-        #a = SP.PoseStamped()
-        #a.pose.position.x
-        # current physical position
-        self.pose_stamped =  SP.PoseStamped(
-            header=SP.Header(
-            frame_id="base_footprint",  # no matter, plugin don't use TF
-            stamp=rospy.Time.now()),    # stamp should update
-        )
-        self.twist_stamped = TwistStamped() # delete
-
-
-    def _read_position_from_topic(self, topic):
-        self.pose_stamped = topic
-    
-
-    def get_current_time(self):
-        return rospy.rostime.Time.now()
-
-    def get_current_pose(self):
-        return self.pose_stamped
-
-
-    def set_target_velocity(self, x,y,z):
-        msg = TwistStamped()
-        msg.twist.linear = Vector3(x,y,z)
-        self.pub_twist.publish(msg)
-
-    # send target position to drone
-    def set_target_pose(self,x,y,z):
-
-        msg = SP.PoseStamped(
-            header=SP.Header(
-            frame_id="base_footprint",  # no matter, plugin don't use TF
-            stamp=rospy.Time.now()),    # stamp should update
-        )
-
-        msg.pose.position.x = x
-        msg.pose.position.y = y
-        msg.pose.position.z = z
-        # For demo purposes we will lock yaw/heading to north.
-        yaw_degrees = 0  # North
-        yaw = radians(yaw_degrees)
-        quaternion = quaternion_from_euler(0, 0, yaw)
-        msg.pose.orientation = SP.Quaternion(*quaternion)
-        self.pub_pose.publish(msg)
-        
-
-    def arm(self,bool):
-        rospy.wait_for_service(self.uav_name + '/mavros/cmd/arming')
-        response = self.arming_cl(value = True)
-        #rospy.loginfo(response)
-    def set_offboard(self):
-        rospy.wait_for_service(self.uav_name + '/mavros/set_mode')
-        response = self.change_mode(custom_mode="OFFBOARD")
-        #rospy.loginfo(response)
-
-
-
-class Mission:
-    def __init__(self, uav, rate):
-        self.uav = uav
-        self.rate = rate
-        self.start_time = None
-    
-    def execute_mission(self):
-        self.mission_started()
-        while(True):
-            if(self.mission_ended()):
-                break
-            else:
-                self.mission_loop()      
-            #rospy.spinOnce()     
-            self.rate.sleep()
-    
-    def mission_started(self):
-        self.start_time = self.uav.get_current_time()
-        pass
-
-    def mission_loop(self):
-        print("PROBLEM0")
-        pass
-
-    def mission_ended(self):
-        print("PROBLEM1")
-        return False
-
-    def get_time_since_start(self):
-        sincestart = self.uav.get_current_time().to_sec() - self.start_time.to_sec()
-        return sincestart
-
-class GoAndWait(Mission):
-    def __init__(self, uav, rate, duration, x,y,z):
-        super().__init__(uav, rate)
-        self.setpoint = SetpointPosition(uav, rate, x,y,z)
-        self.duration = duration
-
-    def mission_loop(self):
-        self.setpoint.mission_loop()
-        
-    def mission_ended(self):
-        reached = self.setpoint.mission_ended()
-        timesup = self.get_time_since_start() > self.duration
-        if(reached and timesup):
-            return True
-        else:
-            return False
-    
-
-
-class MakeCircle(Mission):
-    def __init__(self, uav, rate, period, radius):
-        super().__init__(uav, rate)
-        self.period = period
-        self.radius = radius
-        self.center = None
-    
-    def mission_started(self):
-        super().mission_started()
-        self.center = self.uav.get_current_pose().pose.position
-        self.center.x = self.center.x -self.radius
-        
-    def mission_loop(self):
-        time = self.get_time_since_start() / self.period # 0 to 1
-        dx = cos(time * pi * 2) * self.radius
-        dy = sin(time * pi * 2) * self.radius
-        self.uav.set_target_pose(self.center.x + dx, self.center.y + dy, self.center.z)
-
-        vx = -sin(time * pi * 2) * self.radius
-        vy = cos(time * pi * 2) * self.radius
-        self.uav.set_target_velocity(vx,vy,0)
-    
-    def mission_ended(self):
-        if(self.get_time_since_start() > self.period):
-            return True
-        else:
-            return False
-
-
-class TakeOff(Mission):
-    def __init__(self, uav, rate):
-        super().__init__(uav, rate)
-        self.setpoint = None
-
-    def mission_started(self):
-        super().mission_started()
-        uav_start_pose = self.uav.get_current_pose()
-        self.setpoint = SetpointPosition(self.uav, self.rate, uav_start_pose.pose.position.x, uav_start_pose.pose.position.y, uav_start_pose.pose.position.z + 10)
-
-    def mission_loop(self):
-        self.uav.arm(True)
-        self.uav.set_offboard()
-
-        self.setpoint.mission_loop()
-    
-    def mission_ended(self):
-        return self.setpoint.mission_ended()
-
-
-class SetpointPosition(Mission):
-    """
-    This class sends position targets to FCU's position controller
-    """
-    def __init__(self,uav, rate,x,y,z):
-        super().__init__(uav, rate)
-        self.x = x
-        self.y = y
-        self.z = z
-
-
-    def mission_loop(self):
-        self.uav.set_target_pose(self.x,self.y,self.z)
-
-    def mission_ended(self):
-        current_pos = self.uav.get_current_pose()
-
-        def is_near(cur, tar):
-            return abs(cur - tar) < 0.5
-        if is_near(current_pos.pose.position.x, self.x) and \
-            is_near(current_pos.pose.position.y, self.y) and \
-            is_near(current_pos.pose.position.z, self.z):
-            return True
-        return False
 
 if __name__ == '__main__':
     try:
         start_missions()
     except rospy.ROSInterruptException:
         pass
+
+'''
+class Commander(UAV):
+    def __init__(self, uav_name, team):
+        super(Commander ,self).__init__(uav_name)
+        self.team = team
+        self.message_topic = None
+    def give_command(self, gcs_message):
+        self. = rospy.Publisher(""super(Commander, self).uav_name, String, queue_size = 10)
+        super(Commander, self).add_info_transmitter(gcs_message)
+
+class Slave(UAV):
+    def __init__(self, uav_name, leader):
+        super(Slave, self).__init__(uav_name)
+        self.leader = leader
+        self.message = None
+    def receive_command(self, gcs_message):
+        self.message = super(Slave, self).get_info_transmitter()
+'''
