@@ -135,13 +135,19 @@ class TriangleSlave(Mission):
 
         
     
-    def get_collision_avoidance_u(self, selfpos, otherpos, dist=5):
+    def get_collision_avoidance_u(self, selfpos, otherpos, dist=10):
         #u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
         distance = np.linalg.norm(selfpos - otherpos)
-        alpha = 1
-        beta = 1
-        return alpha * (math.exp(-beta*distance) - math.exp(-beta*dist)) \
-            if distance < dist else np.array([0.0,0.0,0.0])
+        direction = selfpos - otherpos
+        direction = direction / np.linalg.norm(direction)
+
+        alpha = 3
+        beta = 0.5
+        
+        if distance < dist:
+            return direction * alpha * (math.exp(-beta*distance) - math.exp(-beta*dist))
+        else:
+            return np.array([0.0,0.0,0.0])
 
 
     def get_position_u(self, selfpos, targetpos):

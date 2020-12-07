@@ -8,9 +8,7 @@ a = np.array([1,0,0])
 b = np.array([0,2,0])
 u = [1, 2, 3]
 
+a += 3
+print(a)
 
-print(a + b)
-b += u
-print(b)
-print(np.linalg.norm(a + b) * 2)
 
