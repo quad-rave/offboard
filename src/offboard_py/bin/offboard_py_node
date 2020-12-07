@@ -10,7 +10,7 @@ import mavros
 from math import *
 from mavros.utils import *
 from mavros import setpoint as SP
-from tf.transformations import quaternion_from_euler
+#from tf.transformations import quaternion_from_euler
 from mavros_msgs.srv import SetMode
 from mavros_msgs.srv import CommandTOL
 from mavros_msgs.srv import CommandBool
@@ -22,7 +22,8 @@ from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import Vector3
 from missions import *
 from uav import UAV
-
+from mission_factory import MissionFactory
+from triangle_missions import TriangleLeader
 
 ## New task: selecting a leader which give commands from the gcs to the rest of the group
 # the command is applied by the group.
@@ -41,12 +42,10 @@ def start_missions():
         uavs.append(uav)
     time.sleep(5)
     # define a leader mission and assign it through one of the uav's, it doesnt matter which one
-    leader_mission = FormationLeader()
-    leader_mission.point_cloud = [Vector3(0,0), Vector3(20, 0), Vector3(10, 10)]
-    leader_mission.uav_count = 3
+    leader_mission = TriangleLeader()
+    leader_mission.uav_count = 3 #                               20                10  10
+    leader_mission.point_cloud = [np.array([0,0,5]), np.array([0,0, 5]), np.array([8, 8,5])]
     uavs[0].assign_mission(leader_mission, "uav0")
-
-
 
     time.sleep(2)
     input()
