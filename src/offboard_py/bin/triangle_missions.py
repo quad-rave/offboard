@@ -124,19 +124,18 @@ class TriangleSlave(Mission):
             i+=1
 
         targetpos_u = self.get_position_u(my_pos, self.target_pos_info.value)
-        dampen_u = uav.get_current_velocity() * (-0.3)
+        dampen_u = uav.get_current_velocity() * (-0.8)
 
 
-        gain = targetpos_u * 5 + dampen_u * 5 + collision_avoidance_u* 1.0
+        gain = targetpos_u * 0.1 + dampen_u * 0.2 + collision_avoidance_u* 0.1
 
-        self.u_integral = self.u_integral * 0.8
         self.u_integral += gain
 
         uav.set_target_pose(uav.get_current_pose() + self.u_integral )
 
         
     
-    def get_collision_avoidance_u(self, selfpos, otherpos, dist=3):
+    def get_collision_avoidance_u(self, selfpos, otherpos, dist=5):
         #u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
         distance = np.linalg.norm(selfpos - otherpos)
         alpha = 1

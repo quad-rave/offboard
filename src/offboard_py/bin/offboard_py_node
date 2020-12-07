@@ -44,7 +44,7 @@ def start_missions():
     # define a leader mission and assign it through one of the uav's, it doesnt matter which one
     leader_mission = TriangleLeader()
     leader_mission.uav_count = 3 #                               20                10  10
-    leader_mission.point_cloud = [np.array([0,0,5]), np.array([0,0, 5]), np.array([0, 0,5])]
+    leader_mission.point_cloud = [np.array([0,0,5]), np.array([0,0, 5]), np.array([10, 10,5])]
     uavs[0].assign_mission(leader_mission, "uav0")
 
     time.sleep(2)
