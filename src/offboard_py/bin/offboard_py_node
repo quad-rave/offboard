@@ -24,6 +24,7 @@ from missions import *
 from uav import UAV
 from mission_factory import MissionFactory
 from triangle_missions import TriangleLeader
+from triangle_missions_decentralized import TriangleMember
 
 ## New task: selecting a leader which give commands from the gcs to the rest of the group
 # the command is applied by the group.
@@ -41,11 +42,20 @@ def start_missions():
         uav = UAV("uav" + str(i))
         uavs.append(uav)
     time.sleep(5)
-    # define a leader mission and assign it through one of the uav's, it doesnt matter which one
-    leader_mission = TriangleLeader()
-    leader_mission.uav_count = 3 #                               20                10  10
-    leader_mission.point_cloud = [np.array([0,0,5]), np.array([0,0, 5]), np.array([0, 0,5])]
-    uavs[0].assign_mission(leader_mission, "uav0")
+
+    # define a mission and assign it to uavs
+    member_mission = TriangleMember()
+    member_mission.uav_count = 3 #                               20                10  10
+    member_mission.point_cloud = [np.array([0,0,5]), np.array([0,10, 5]), np.array([10, 10,5])]
+
+    member_mission.uav_id = 0
+    uavs[0].assign_mission(member_mission, "uav0")
+
+    member_mission.uav_id = 1
+    uavs[1].assign_mission(member_mission, "uav1")
+
+    member_mission.uav_id = 2
+    uavs[2].assign_mission(member_mission, "uav2")
 
     time.sleep(2)
     input()
@@ -59,21 +69,3 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         pass
 
-'''
-class Commander(UAV):
-    def __init__(self, uav_name, team):
-        super(Commander ,self).__init__(uav_name)
-        self.team = team
-        self.message_topic = None
-    def give_command(self, gcs_message):
-        self. = rospy.Publisher(""super(Commander, self).uav_name, String, queue_size = 10)
-        super(Commander, self).add_info_transmitter(gcs_message)
-
-class Slave(UAV):
-    def __init__(self, uav_name, leader):
-        super(Slave, self).__init__(uav_name)
-        self.leader = leader
-        self.message = None
-    def receive_command(self, gcs_message):
-        self.message = super(Slave, self).get_info_transmitter()
-'''

@@ -2,6 +2,7 @@
 # vim:set ts=4 sw=4 et:
 from missions import *
 from triangle_missions import TriangleLeader, TriangleSlave
+from triangle_missions_decentralized import TriangleMember
 
 
 class MissionFactory(object):
@@ -17,6 +18,7 @@ class MissionFactory(object):
         #missiontype_to_constructor.add(7, FormationSlave)
         missiontype_to_constructor.add(8, MakeCircle)
         missiontype_to_constructor.add(9, TriangleSlave)
+        missiontype_to_constructor.add(10, TriangleMember)
         self.missiontype_to_constructor = missiontype_to_constructor
 
     
