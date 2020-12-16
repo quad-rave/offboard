@@ -78,13 +78,23 @@ class TriangleMember(Mission):
 
         dampen_u = uav.get_current_velocity() * (-0.8)
 
+        altitude_u = self.get_altitude_u()
 
-        gain = targetpos_u * (0.01) + dampen_u * 0.2 + collision_avoidance_u* 0.1
+        gain = targetpos_u * (0.01) + dampen_u * 0.2 + collision_avoidance_u* 0.1 + altitude_u * 0.1
 
         self.u_integral += gain
 
         uav.set_target_pose(uav.get_current_pose() + self.u_integral )
 
+    def get_altitude_u(self):
+        my_index = self.uav_id
+        my_pos = self.uav_pos_infos[my_index].value
+        if(my_pos[2] < 4):
+            closeness = 1 - my_pos[2]/3
+            force = closeness * closeness * 10
+            return np.array([0.0,0.0,1.0 * force])
+        else:
+            return np.array([0.0,0.0,0.0])
     def get_targetpos_u(self):
         i = 0
         my_index = self.uav_id

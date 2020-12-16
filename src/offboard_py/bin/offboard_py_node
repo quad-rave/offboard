@@ -38,15 +38,20 @@ def start_missions():
 
     # define the UAV objects
     uavs = []
-    for i in range(3):
+    for i in range(6):
         uav = UAV("uav" + str(i))
         uavs.append(uav)
-    time.sleep(5)
+    time.sleep(3)
 
     # define a mission and assign it to uavs
     member_mission = TriangleMember()
-    member_mission.uav_count = 3 #                               20                10  10
-    member_mission.point_cloud = [np.array([0,0,5]), np.array([0,10, 5]), np.array([10, 10,5])]
+    member_mission.uav_count = 6 #                               20                10  10
+    #member_mission.point_cloud = [np.array([0,0,5]), np.array([0,10, 5]), np.array([10, 10,5])]
+    member_mission.point_cloud = []
+
+    for i in range(6):
+        pos = np.array([i * 5 - 20, 0,10])
+        member_mission.point_cloud.append(-pos)
 
     member_mission.uav_id = 0
     uavs[0].assign_mission(member_mission, "uav0")
@@ -56,6 +61,16 @@ def start_missions():
 
     member_mission.uav_id = 2
     uavs[2].assign_mission(member_mission, "uav2")
+
+    member_mission.uav_id = 3
+    uavs[3].assign_mission(member_mission, "uav3")
+
+    member_mission.uav_id = 4
+    uavs[4].assign_mission(member_mission, "uav4")
+
+    member_mission.uav_id = 5
+    uavs[5].assign_mission(member_mission, "uav5")
+
 
     time.sleep(2)
     input()
