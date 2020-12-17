@@ -45,35 +45,30 @@ def start_missions():
 
     # define a mission and assign it to uavs
     member_mission = TriangleMember()
-    member_mission.uav_count = 6 #                               20                10  10
-    #member_mission.point_cloud = [np.array([0,0,5]), np.array([0,10, 5]), np.array([10, 10,5])]
-    member_mission.point_cloud = []
+    member_mission.uav_count = 6
+
+
+    point_cloud = [np.array([6,10,5]), np.array([3,5, 5]), np.array([9, 5,5]), np.array([0, 0,5]), np.array([6, 0,5]), np.array([12, 0,5]) ]
 
     for i in range(6):
-        pos = np.array([i * 5 - 20, 0,10])
-        member_mission.point_cloud.append(-pos)
-
-    member_mission.uav_id = 0
-    uavs[0].assign_mission(member_mission, "uav0")
-
-    member_mission.uav_id = 1
-    uavs[1].assign_mission(member_mission, "uav1")
-
-    member_mission.uav_id = 2
-    uavs[2].assign_mission(member_mission, "uav2")
-
-    member_mission.uav_id = 3
-    uavs[3].assign_mission(member_mission, "uav3")
-
-    member_mission.uav_id = 4
-    uavs[4].assign_mission(member_mission, "uav4")
-
-    member_mission.uav_id = 5
-    uavs[5].assign_mission(member_mission, "uav5")
-
-
+        member_mission.uav_id = i    
+        uavs[i].assign_mission(member_mission, ("uav" + str(i)))
+    
     time.sleep(2)
+    point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
+    point_cloud_info.value = point_cloud
+    point_cloud_info.publish_data()
+    time.sleep(20)
+    # flip positions
+    for i in range(6):
+        point_cloud_info.value[i] = point_cloud[5 - i]
+    point_cloud_info.publish_data()
+    #for i in rate(6):
+    #    point_cloud_info.publish_data()
+    #    time.sleep(2)
+
     input()
+    
     return
 
 

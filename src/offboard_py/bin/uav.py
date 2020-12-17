@@ -88,10 +88,11 @@ class UAV(object):
         msg = buffer.to_string()
         print("try assign mission")
         mission_pub = rospy.Publisher(uav_name + '/mission_assign', String, queue_size=10)
-        time.sleep(2)
+        time.sleep(1)
+        
         mission_pub.publish(msg)
         print("published assign mission: " + uav_name + '/mission_assign' + ", data: " + msg)
-        time.sleep(2)
+        #time.sleep(2)
 
     def _read_velocity_from_topic(self, topic):
         #print("calback received!*---------------------------------------------")

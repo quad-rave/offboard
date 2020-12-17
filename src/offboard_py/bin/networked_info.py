@@ -34,7 +34,6 @@ class NetworkedInfo(object):
 
 # my_vector_info.value = myVector
 # my_vector_info.publish()
-
 class VectorInfo(NetworkedInfo): 
     def __init__(self, topic):
         super(VectorInfo, self).__init__(topic)
@@ -45,5 +44,39 @@ class VectorInfo(NetworkedInfo):
     def deserialize_from_buffer(self, buffer):
         self.value = buffer.read_vector3()
 
+class BoolInfo(NetworkedInfo):
+    def __init__(self, topic):
+        super(BoolInfo, self).__init__(topic)
+        self.value = False
 
+    def serialize_into_buffer(self, buffer):
+        if(self.value == True):
+            buffer.write_int(1)
+        else:
+            buffer.write_int(0)
 
+    def deserialize_from_buffer(self, buffer):
+        intval = buffer.read_int()
+        if(intval == 1):
+            self.value = True
+        else:
+            self.value = False
+
+class VectorArrayInfo(NetworkedInfo):
+    def __init__(self, topic):
+        super(VectorArrayInfo, self).__init__(topic)
+        self.value = []
+
+    def serialize_into_buffer(self, buffer):
+        length = len(self.value)
+
+        buffer.write_int(length)
+        for i in range(length):
+            buffer.write_vector3(self.value[i])
+
+    def deserialize_from_buffer(self, buffer):
+        self.value = []
+        length = buffer.read_int()
+        for i in range(length):
+            self.value.append(buffer.read_vector3())
+    
