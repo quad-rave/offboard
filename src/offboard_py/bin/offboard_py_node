@@ -25,11 +25,17 @@ from uav import UAV
 from mission_factory import MissionFactory
 from triangle_missions import TriangleLeader
 from triangle_missions_decentralized import TriangleMember
-
+from utility import *
+import signal
 ## New task: selecting a leader which give commands from the gcs to the rest of the group
 # the command is applied by the group.
 # How do we make the connections 
 # Create a mission which accepts its leader
+
+def interupt_handler(sig_num, frame):
+    print ("Exiting")
+    sys.exit(-2) #Terminate process here as catching the signal removes the close process behavior of Ctrl-C
+
 def hmm(topic):
     print("hmmmmmmmm: " + topic.data)
 def start_missions():
@@ -48,26 +54,66 @@ def start_missions():
     member_mission.uav_count = 6
 
 
-    point_cloud = [np.array([6,10,5]), np.array([3,5, 5]), np.array([9, 5,5]), np.array([0, 0,5]), np.array([6, 0,5]), np.array([12, 0,5]) ]
+    point_cloud_star = []
+    step = 2 * pi / 6
+    radius = 10
+    angle = 0.0
+    for i in range(6):
+        step_radius = radius
+        if(i % 2 == 0):
+            step_radius = radius * 0.5
+        point_cloud_star.append(vec(cos(step * i) * step_radius, 5 ,sin(step * i )* step_radius))
 
+
+    point_cloud_hex = []
+    step = 2 * pi / 6
+    radius = 10
+    angle = 0.0
+    for i in range(6):
+        step_radius = radius
+        point_cloud_hex.append(vec(cos(step * i) * step_radius, 5 ,sin(step * i) * step_radius) )
+        
+        
+    point_cloud_line = [np.array([0,  0,5]), np.array([5, 0, 5]), 
+                        np.array([10, 0,5]), np.array([15, 0,5]), 
+                        np.array([20, 0,5]), np.array([25, 0,5]), ]
+
+    point_cloud_rect = [np.array([0,0,5]), np.array([0, 0, 10]), 
+                        np.array([5, 0,5]), np.array([5, 0,10]), 
+                        np.array([10, 0,5]), np.array([10, 0,10]), ]
+
+
+
+    
     for i in range(6):
         member_mission.uav_id = i    
         uavs[i].assign_mission(member_mission, ("uav" + str(i)))
-    
+
     time.sleep(2)
     point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
-    point_cloud_info.value = point_cloud
-    point_cloud_info.publish_data()
-    time.sleep(20)
-    # flip positions
-    for i in range(6):
-        point_cloud_info.value[i] = point_cloud[5 - i]
-    point_cloud_info.publish_data()
-    #for i in rate(6):
-    #    point_cloud_info.publish_data()
-    #    time.sleep(2)
+    signal.signal(signal.SIGINT, interupt_handler)
+    while True:
+        # update point cloud
+        point_cloud_info.value = point_cloud_star
+        point_cloud_info.publish_data()
+        time.sleep(10)
+        
+        # update point cloud
+        point_cloud_info.value = point_cloud_rect
+        point_cloud_info.publish_data()
+        time.sleep(10)
 
-    input()
+        # update point cloud
+        point_cloud_info.value = point_cloud_line
+        point_cloud_info.publish_data()
+        time.sleep(10)
+
+        # update point cloud
+        point_cloud_info.value = point_cloud_hex
+        point_cloud_info.publish_data()
+        time.sleep(10)
+
+    
     
     return
 

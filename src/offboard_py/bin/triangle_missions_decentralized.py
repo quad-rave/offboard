@@ -12,6 +12,8 @@ from geometry_msgs.msg import Vector3
 from math import *
 
 from missions import *
+from scipy.optimize import linear_sum_assignment
+from utility import *
 
 
 class TakeOffAndWaitOthers(Mission):
@@ -137,7 +139,7 @@ class TriangleMember(Mission):
                 
             i+=1
 
-        targetpos_u = self.get_targetpos_u()
+        targetpos_u = self.get_targetpos_u_via_effective_point_cloud() #self.get_targetpos_u()
 
         dampen_u = uav.get_current_velocity() * (-0.8)
 
@@ -171,6 +173,52 @@ class TriangleMember(Mission):
                 u -= target_delta - delta
             i+=1
         return u
+
+    def get_targetpos_u_via_effective_point_cloud(self):
+        effective_point_cloud = self.get_effective_point_cloud()
+
+        i = 0
+        my_index = self.uav_id
+        my_pos = self.uav_pos_infos[my_index].value
+        u = np.array([0.0,0.0,0.0])
+        for uav_pos_info in self.uav_pos_infos:
+            if(i != my_index):
+                other_pos = uav_pos_info.value
+                delta = other_pos - my_pos
+                target_delta = effective_point_cloud[i] - effective_point_cloud[my_index]
+                u -= target_delta - delta
+            i+=1
+        return u
+
+    def get_formation_u_with_other(my_pos, other_pos, my_target_pos, other_target_pos):
+        delta = other_pos - my_pos
+        target_delta = other_target_pos - my_target_pos
+        return (target_delta - delta)
+
+    def get_effective_point_cloud(self):
+        uav_poses = []
+        for uav_pos_info in self.uav_pos_infos:
+            uav_poses.append(uav_pos_info.value)
+        point_cloud = self.point_cloud_info.value
+        uav_count = self.uav_count
+
+        
+        cost_matrix = np.zeros((uav_count, uav_count), dtype=np.float64)
+
+        for uav in range(uav_count):
+            for point in range(uav_count):
+                cost_matrix[uav, point] = dist(uav_poses[uav], point_cloud[point])
+                
+
+        row_ind, col_ind = linear_sum_assignment(cost_matrix)
+        print(row_ind, "\n----------")
+        print(col_ind)
+
+        effective_point_cloud = [vec(0.0,0.0,0.0) for i in range(len(point_cloud))]
+        for i in range(len(row_ind)):
+            effective_point_cloud[row_ind[i]] = point_cloud[col_ind[i]]
+        
+        return effective_point_cloud
     
     def get_collision_avoidance_u(self, selfpos, otherpos, dist=10):
         #u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
