@@ -80,14 +80,20 @@ class TriangleMember(Mission):
         self.uav_count = None
         self.uav_id = None
         self.uav_pos_infos = []
+        self.uav_vel_infos = []
         self.point_cloud_info = None
         self.u_integral = np.array([0.0,0.0,0.0])
+        self.formation_pos = vec(0.0,0.0,0.0) # center
+        self.formation_vel = vec(0.0,0.0,0.0)
+        self.formation_targetpos = None
+
+        
 
     def deserialize_data_from_buffer(self, buffer):
         #self.target_position = buffer.read_vector3()
         self.uav_id = buffer.read_int()
         self.uav_count = buffer.read_int()
-
+        
         #size = buffer.read_int()
         #for i in range(size):
         #    self.point_cloud.append(buffer.read_vector3())
@@ -109,11 +115,12 @@ class TriangleMember(Mission):
 
         # point cloud is now recieved dynamically as a VectorArrayInfo
         self.point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
+        self.formation_targetpos = VectorInfo("/triangle_mission/formation_targetpos")
 
         for i in range(self.uav_count):
             #self.uav_pos_infos.append(VectorInfo(topic))
-            self.uav_pos_infos.append(VectorInfo("uav" + str(i) + "/triangle_mission/position_target"))
-
+            self.uav_pos_infos.append(VectorInfo("uav" + str(i) + "/triangle_mission/current_pos"))
+            self.uav_vel_infos.append(VectorInfo("uav" + str(i) + "/triangle_mission/current_vel"))
         # this mission will end when all uavs have taken off and ready
         swarm_takeoff = TakeOffAndWaitOthers()
         swarm_takeoff.uav_count = self.uav_count
@@ -123,15 +130,20 @@ class TriangleMember(Mission):
 
 
     def mission_loop(self, uav, rate):
-        self.uav_pos_infos[self.uav_id].value = uav.get_current_pose() # change for the Vector3 ds
-        self.uav_pos_infos[self.uav_id].publish_data()
-        print("my id: ", self.uav_id)
+        
+        self.communications()
+
+        targetpos_u_navigation = self.get_targetpos_u_navigation()
+        dampen_u_navigation = self.formation_vel * (-0.8)
+        navigation_gain = targetpos_u_navigation * 0.05 + dampen_u_navigation * 0.2
+
+
 
         collision_avoidance_u = np.array([0.,0.,0.])
         i = 0
         for uav_pos_info in self.uav_pos_infos:
             if i != self.uav_id:
-                my_pos = uav.get_current_pose()
+                my_pos = self.uav.get_current_pose()
                 others_pos = uav_pos_info.value
 
                 u = self.get_collision_avoidance_u(my_pos, others_pos)
@@ -140,16 +152,43 @@ class TriangleMember(Mission):
             i+=1
 
         targetpos_u = self.get_targetpos_u_via_effective_point_cloud() #self.get_targetpos_u()
-
-        dampen_u = uav.get_current_velocity() * (-0.8)
-
+        dampen_u = (self.formation_vel - uav.get_current_velocity()) * (0.8)
         altitude_u = self.get_altitude_u()
+        formation_gain = targetpos_u * (0.01) + dampen_u * 0.2 + collision_avoidance_u* 0.1 + altitude_u * 0.1
 
-        gain = targetpos_u * (0.01) + dampen_u * 0.2 + collision_avoidance_u* 0.1 + altitude_u * 0.1
+        self.u_integral += formation_gain + navigation_gain * 0.5
 
-        self.u_integral += gain
+        uav.set_target_pose(uav.get_current_pose() + self.u_integral)
 
-        uav.set_target_pose(uav.get_current_pose() + self.u_integral )
+
+    def get_targetpos_u_navigation(self):
+        target = self.formation_targetpos.value
+        current = self.formation_pos
+
+        return target - current
+
+
+    def communications(self):
+        self.uav_pos_infos[self.uav_id].value = self.uav.get_current_pose() # change for the Vector3 ds
+        self.uav_pos_infos[self.uav_id].publish_data()
+
+        self.uav_vel_infos[self.uav_id].value = self.uav.get_current_velocity() # change for the Vector3 ds
+        self.uav_vel_infos[self.uav_id].publish_data()
+
+        print("my id: ", self.uav_id)
+
+
+        pos_sum = vec(0.0,0.0,0.0)
+        for uav_pos_info in self.uav_pos_infos:
+            pos_sum += uav_pos_info.value
+        self.formation_pos = pos_sum / self.uav_count
+    
+        vel_sum = vec(0.0,0.0,0.0)
+        i = 0
+        for uav_vel_info in self.uav_vel_infos:
+            vel_sum += uav_vel_info.value
+            i += 1
+        self.formation_vel = vel_sum / self.uav_count
 
     def get_altitude_u(self):
         my_index = self.uav_id
@@ -207,7 +246,7 @@ class TriangleMember(Mission):
 
         for uav in range(uav_count):
             for point in range(uav_count):
-                cost_matrix[uav, point] = dist(uav_poses[uav], point_cloud[point])
+                cost_matrix[uav, point] = dist(uav_poses[uav], point_cloud[point] + self.formation_pos)
                 
 
         row_ind, col_ind = linear_sum_assignment(cost_matrix)

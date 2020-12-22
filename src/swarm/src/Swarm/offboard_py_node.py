@@ -56,7 +56,7 @@ def start_missions():
 
     point_cloud_star = []
     step = 2 * pi / 6
-    radius = 10
+    radius = 8
     angle = 0.0
     for i in range(6):
         step_radius = radius
@@ -91,7 +91,59 @@ def start_missions():
 
     time.sleep(2)
     point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
-    signal.signal(signal.SIGINT, interupt_handler)
+    formation_targetpos = VectorInfo("/triangle_mission/formation_targetpos")
+    time.sleep(2)
+    
+    point_cloud_info.value = point_cloud_star
+    point_cloud_info.publish_data()
+    formation_targetpos.value = vec(0.0,0.0,15.0)
+    formation_targetpos.publish_data()
+    time.sleep(4)
+
+    i = 0
+    while True:
+        formation_targetpos.value = vec(0.0,0.0,15.0)
+        formation_targetpos.publish_data()
+        time.sleep(6)
+
+        formation_targetpos.value = vec(20.0,0.0,15.0)
+        formation_targetpos.publish_data()
+        time.sleep(6)
+
+        formation_targetpos.value = vec(20.0,20.0,15.0)
+        formation_targetpos.publish_data()
+        time.sleep(6)
+
+        formation_targetpos.value = vec(0.0,20.0,15.0)
+        formation_targetpos.publish_data()
+        time.sleep(6)
+
+        formation_targetpos.value = vec(0.0,0.0,15.0)
+        formation_targetpos.publish_data()
+        time.sleep(4)
+
+        i+=1
+
+        # change formation
+        if(i % 4 == 0):
+            point_cloud_info.value = point_cloud_star
+            point_cloud_info.publish_data()
+        elif(i % 4 == 1):
+            point_cloud_info.value = point_cloud_hex
+            point_cloud_info.publish_data()
+        elif(i % 4 == 2):
+            point_cloud_info.value = point_cloud_line
+            point_cloud_info.publish_data()
+        elif(i % 4 == 3):
+            point_cloud_info.value = point_cloud_rect
+            point_cloud_info.publish_data()
+
+        
+
+
+    a = input()
+    #signal.signal(signal.SIGINT, interupt_handler)
+    '''
     while True:
         # update point cloud
         point_cloud_info.value = point_cloud_star
@@ -114,6 +166,7 @@ def start_missions():
         time.sleep(10)
 
     
+    '''
     
     return
 
