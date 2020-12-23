@@ -24,7 +24,7 @@ from missions import *
 from uav import UAV
 from mission_factory import MissionFactory
 from triangle_missions import TriangleLeader
-from triangle_missions_decentralized import TriangleMember
+from triangle_missions_decentralized import *
 from utility import *
 import signal
 ## New task: selecting a leader which give commands from the gcs to the rest of the group
@@ -92,6 +92,10 @@ def start_missions():
     time.sleep(2)
     point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
     formation_targetpos = VectorInfo("/triangle_mission/formation_targetpos")
+    formation_targetrot = FormationRotationInfo("/triangle_mission/formation_targetrot")
+    
+    #self.formation_rot_info = FormationRotationInfo("/triangle_mission/formation_rot")
+
     time.sleep(2)
     
     point_cloud_info.value = point_cloud_star
@@ -105,6 +109,12 @@ def start_missions():
         formation_targetpos.value = vec(0.0,0.0,15.0)
         formation_targetpos.publish_data()
         time.sleep(6)
+
+        formation_targetrot.axis = 'Z'
+        formation_targetrot.duration = 10
+        formation_targetrot.angle = math.pi * 100
+        formation_targetrot.publish_data()
+        time.sleep(12)
 
         formation_targetpos.value = vec(20.0,0.0,15.0)
         formation_targetpos.publish_data()

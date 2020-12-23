@@ -74,6 +74,25 @@ class TakeOffAndWaitOthers(Mission):
     def mission_ended(self,uav,rate):
         return self.mission_complete_info.value
 
+class FormationRotationInfo(NetworkedInfo):
+    
+    def __init__(self, topic):
+        super(FormationRotationInfo, self).__init__(topic)
+        self.axis = "Z"
+        self.duration = 5.0
+        self.angle = 0.0
+        
+    def serialize_into_buffer(self, buffer):
+        buffer.write_char(self.axis)
+        buffer.write_float(self.duration)
+        buffer.write_float(self.angle)
+
+    
+    def deserialize_from_buffer(self, buffer):
+        self.axis = buffer.read_char()
+        self.duration = buffer.read_float()
+        self.angle = buffer.read_float()
+
 class TriangleMember(Mission):
     def __init__(self):
         self.setpoint = SetpointPosition()
@@ -85,9 +104,43 @@ class TriangleMember(Mission):
         self.u_integral = np.array([0.0,0.0,0.0])
         self.formation_pos = vec(0.0,0.0,0.0) # center
         self.formation_vel = vec(0.0,0.0,0.0)
-        self.formation_targetpos = None
+        self.formation_targetpos_info = None
+        self.formation_targetrot_info = None
+
+        # formation rotation:
+        self.formation_rot_cur_angle = 0.0
+        self.formation_rot_target_angle = 0.0
+        self.formation_rot_axis = "Z"
+        self.formation_rot_starttime = 0.0
+        self.formation_rot_duration = 5.0
+        self.formation_rot_info = None
+        
+
+        self.formation_rot_matrix = rotation_matrix(0.0)
+        self.formation_rot_start_matrix = rotation_matrix(0.0)
 
         
+    def formation_rot_info_callback(self):
+        self.formation_rot_axis = self.formation_rot_info.axis
+        self.formation_rot_duration = self.formation_rot_info.duration
+        self.formation_rot_target_angle = self.formation_rot_info.angle
+        self.formation_rot_starttime = self.uav.get_current_time().to_sec()
+        self.formation_rot_cur_angle = 0.0
+
+        self.formation_rot_start_matrix = self.formation_rot_matrix
+
+        print("formation_rot callback -A------------------AAAAAAAAAAAAAAAAAAAAAAAAA")
+    
+    def formation_rot_update(self):
+        current_time = self.uav.get_current_time().to_sec()
+        start_time = self.formation_rot_starttime
+        end_time = self.formation_rot_starttime + self.formation_rot_duration
+        end_psi = self.formation_rot_target_angle
+
+        delta_psi = remap(current_time, start_time, end_time, 0.0, end_psi)        
+        self.formation_rot_matrix = rotation_matrix(delta_psi, self.formation_rot_axis) * self.formation_rot_start_matrix
+
+
 
     def deserialize_data_from_buffer(self, buffer):
         #self.target_position = buffer.read_vector3()
@@ -115,7 +168,9 @@ class TriangleMember(Mission):
 
         # point cloud is now recieved dynamically as a VectorArrayInfo
         self.point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
-        self.formation_targetpos = VectorInfo("/triangle_mission/formation_targetpos")
+        self.formation_targetpos_info = VectorInfo("/triangle_mission/formation_targetpos")
+        self.formation_rot_info = FormationRotationInfo("/triangle_mission/formation_targetrot")
+        self.formation_rot_info.assign_callback(self.formation_rot_info_callback)
 
         for i in range(self.uav_count):
             #self.uav_pos_infos.append(VectorInfo(topic))
@@ -137,7 +192,7 @@ class TriangleMember(Mission):
         dampen_u_navigation = self.formation_vel * (-0.8)
         navigation_gain = targetpos_u_navigation * 0.05 + dampen_u_navigation * 0.2
 
-
+        self.formation_rot_update()
 
         collision_avoidance_u = np.array([0.,0.,0.])
         i = 0
@@ -162,12 +217,12 @@ class TriangleMember(Mission):
 
 
     def get_targetpos_u_navigation(self):
-        target = self.formation_targetpos.value
+        target = self.formation_targetpos_info.value
         current = self.formation_pos
 
         return target - current
 
-
+    
     def communications(self):
         self.uav_pos_infos[self.uav_id].value = self.uav.get_current_pose() # change for the Vector3 ds
         self.uav_pos_infos[self.uav_id].publish_data()
@@ -224,12 +279,13 @@ class TriangleMember(Mission):
             if(i != my_index):
                 other_pos = uav_pos_info.value
                 delta = other_pos - my_pos
-                target_delta = effective_point_cloud[i] - effective_point_cloud[my_index]
+                target_delta = np.matmul(self.formation_rot_matrix, effective_point_cloud[i]) - np.matmul(self.formation_rot_matrix, effective_point_cloud[my_index])
+                #target_delta = np.matmul(self.formation_rot_matrix,  target_delta) # check the multiplication. 
                 u -= target_delta - delta
             i+=1
         return u
 
-    def get_formation_u_with_other(my_pos, other_pos, my_target_pos, other_target_pos):
+    def get_formation_u_with_other(self, my_pos, other_pos, my_target_pos, other_target_pos):
         delta = other_pos - my_pos
         target_delta = other_target_pos - my_target_pos
         return (target_delta - delta)
@@ -246,7 +302,7 @@ class TriangleMember(Mission):
 
         for uav in range(uav_count):
             for point in range(uav_count):
-                cost_matrix[uav, point] = dist(uav_poses[uav], point_cloud[point] + self.formation_pos)
+                cost_matrix[uav, point] = dist(uav_poses[uav], (np.matmul(self.formation_rot_matrix ,point_cloud[point]) + self.formation_pos))
                 
 
         row_ind, col_ind = linear_sum_assignment(cost_matrix)

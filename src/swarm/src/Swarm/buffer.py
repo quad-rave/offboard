@@ -26,6 +26,11 @@ class DataBuffer():
     def read_float(self):
         return float(self.list.pop(0))
 
+    def write_char(self, value):
+        self.list.append(value)
+    def read_char(self):
+        return self.list.pop(0)
+
     def write_vector3(self, vector3):
         x = vector3[0]
         y = vector3[1]

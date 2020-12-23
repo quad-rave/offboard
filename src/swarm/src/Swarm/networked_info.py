@@ -14,17 +14,23 @@ class NetworkedInfo(object):
     def __init__(self, topic):
         self.topic_pub = rospy.Publisher(topic, String, queue_size = 10)
         self.topic_sub = rospy.Subscriber(topic, String, self._on_topic_recieve)
-    
+        self.callbacks = []
     # dont override these two:
     def _on_topic_recieve(self,topic):
         topic_buffer = DataBuffer.from_string(topic.data)
         self.deserialize_from_buffer(topic_buffer)
+        
+        for callback in self.callbacks:
+            callback()
 
     def publish_data(self):
         buffer = DataBuffer()
         self.serialize_into_buffer(buffer)
         str_data = buffer.to_string()
         self.topic_pub.publish(str_data)
+
+    def assign_callback(self, callback):
+        self.callbacks.append(callback)
 
     # these two are for overriding:
     def serialize_into_buffer(self, buffer):
@@ -79,4 +85,12 @@ class VectorArrayInfo(NetworkedInfo):
         length = buffer.read_int()
         for i in range(length):
             self.value.append(buffer.read_vector3())
+    
+
+
+
+
+
+
+
     

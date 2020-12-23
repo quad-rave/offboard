@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 class TwoWayDict(object):
     def __init__(self):
@@ -20,3 +21,66 @@ def dist(a,b):
 
 def vec(x,y,z):
     return np.array([x,y,z])
+
+'''
+0 0 -1
+0 1 0
+1 0 0
+
+'''
+'''
+R'(psi_1) = (R(psi_1) - R(psi_0)) / (psi_1 - psi_0)
+u_f = R(psi_1) * target_delta - current_delta # - u_c
+u_c = R'(psi_1) * psi_1' * target_delta
+
+psi_1 = pi/2 = psi(t_i + t_m)
+t_i = start_time
+t_mi = elapsed_time
+
+gamma = { (4 * (psi_1 - psi(t_i)) / t_f^2, 
+          (-4 * (psi_1 - psi(t_i)) / t_f^2,
+          0
+}
+#psi(t_i) == psi
+#psi(t_i + t_mi) == psi + someValue
+
+'''
+
+def rotation_matrix(psi, axis='Z'):
+    mat = np.eye(3)
+    if axis=="X":
+        mat[1,1] = math.cos(psi)
+        mat[1,2] = -math.sin(psi)
+        mat[2,1] = math.sin(psi)
+        mat[2,2] = math.cos(psi)
+    elif axis == "Y":
+        mat[0,0] = math.cos(psi)
+        mat[0,2] = math.sin(psi)
+        mat[2,0] = -math.sin(psi)
+        mat[2,2] = math.cos(psi)
+    elif axis == "Z":
+        mat[0,0] = math.cos(psi)
+        mat[0,1] = -math.sin(psi) 
+        mat[1,0] = math.sin(psi) 
+        mat[1,1] = math.cos(psi)
+    
+    return mat
+
+def lerp(start, end, interval):
+    return (end - start) * interval + start
+def inverse_lerp(start,end, value):
+    return (value - start) / (end - start)
+def remap(a, a0, a1, b0, b1):
+    interval = inverse_lerp(a0,a1,a)
+    return lerp(b0,b1, interval)
+
+
+if __name__ == "__main__":
+
+    mat0 = rotation_matrix(2*math.pi / 4.0)
+    vec0 = vec(1,0,0)
+    result = np.matmul(mat0, vec0)
+    result = np.matmul(mat0, result)
+    print(result)
+    #print_mat(result)
+    
