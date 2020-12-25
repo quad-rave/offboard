@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import time
 
 class TwoWayDict(object):
     def __init__(self):
@@ -76,11 +77,16 @@ def remap(a, a0, a1, b0, b1):
 
 
 if __name__ == "__main__":
+    np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 
-    mat0 = rotation_matrix(2*math.pi / 4.0)
-    vec0 = vec(1,0,0)
-    result = np.matmul(mat0, vec0)
-    result = np.matmul(mat0, result)
-    print(result)
+    print("STARTLOOP-STARTLOOP-STARTLOOP-STARTLOOP-STARTLOOP-STARTLOOP-STARTLOOP-STARTLOOP")
+    loopvec = rotation_matrix(0.0, "Z")
+    loopmat = rotation_matrix(2*math.pi * 0.5 * (1.0/100.0))
+    for i in range(100):
+        print(loopvec)
+        print("mag: ", np.linalg.norm(loopvec))
+        loopvec = np.matmul(loopmat, loopvec)
+        time.sleep(0.2)
+
     #print_mat(result)
     

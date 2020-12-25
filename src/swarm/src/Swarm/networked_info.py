@@ -43,7 +43,7 @@ class NetworkedInfo(object):
 class VectorInfo(NetworkedInfo): 
     def __init__(self, topic):
         super(VectorInfo, self).__init__(topic)
-        self.value = np.array([0,0,0])
+        self.value = np.array([0.0,0.0,0.0])
 
     def serialize_into_buffer(self, buffer):
         buffer.write_vector3(self.value)

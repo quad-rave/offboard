@@ -40,6 +40,7 @@ def hmm(topic):
     print("hmmmmmmmm: " + topic.data)
 def start_missions():
     rospy.init_node('destroyer')
+    np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
     rate = rospy.Rate(10)
 
     # define the UAV objects
@@ -108,13 +109,13 @@ def start_missions():
     while True:
         formation_targetpos.value = vec(0.0,0.0,15.0)
         formation_targetpos.publish_data()
-        time.sleep(6)
+        time.sleep(10)
 
         formation_targetrot.axis = 'Z'
-        formation_targetrot.duration = 10
-        formation_targetrot.angle = math.pi * 100
+        formation_targetrot.duration = 20
+        formation_targetrot.angle = 2* math.pi
         formation_targetrot.publish_data()
-        time.sleep(12)
+        time.sleep(120)
 
         formation_targetpos.value = vec(20.0,0.0,15.0)
         formation_targetpos.publish_data()

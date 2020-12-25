@@ -138,8 +138,16 @@ class TriangleMember(Mission):
         end_psi = self.formation_rot_target_angle
 
         delta_psi = remap(current_time, start_time, end_time, 0.0, end_psi)        
-        self.formation_rot_matrix = rotation_matrix(delta_psi, self.formation_rot_axis) * self.formation_rot_start_matrix
-
+        if(delta_psi > end_psi):
+            delta_psi = end_psi
+        # PROBLEM WITH THIS LINE
+        self.formation_rot_matrix = np.matmul(rotation_matrix(delta_psi, self.formation_rot_axis) , self.formation_rot_start_matrix)
+        if(self.uav_id == 3):
+            #print("formation start matrix: ")
+            #print(rotation_matrix(delta_psi, self.formation_rot_axis))
+            pass
+        #print("delta PSI:", delta_psi, "##");
+        #print(rotation_matrix(delta_psi, self.formation_rot_axis))
 
 
     def deserialize_data_from_buffer(self, buffer):
@@ -230,7 +238,7 @@ class TriangleMember(Mission):
         self.uav_vel_infos[self.uav_id].value = self.uav.get_current_velocity() # change for the Vector3 ds
         self.uav_vel_infos[self.uav_id].publish_data()
 
-        print("my id: ", self.uav_id)
+        #print("my id: ", self.uav_id)
 
 
         pos_sum = vec(0.0,0.0,0.0)
@@ -270,7 +278,7 @@ class TriangleMember(Mission):
 
     def get_targetpos_u_via_effective_point_cloud(self):
         effective_point_cloud = self.get_effective_point_cloud()
-
+        
         i = 0
         my_index = self.uav_id
         my_pos = self.uav_pos_infos[my_index].value
@@ -279,7 +287,15 @@ class TriangleMember(Mission):
             if(i != my_index):
                 other_pos = uav_pos_info.value
                 delta = other_pos - my_pos
-                target_delta = np.matmul(self.formation_rot_matrix, effective_point_cloud[i]) - np.matmul(self.formation_rot_matrix, effective_point_cloud[my_index])
+                
+                target_delta =  np.matmul(self.formation_rot_matrix,  effective_point_cloud[i]) -  np.matmul(self.formation_rot_matrix,  effective_point_cloud[my_index])
+                if(i == 3 and my_index == 0):
+                    print("mags-mags-mags-mags-mags-mags-mags")
+                    #print(np.linalg.norm(np.matmul(self.formation_rot_matrix,  effective_point_cloud[i])))
+                    print(self.formation_rot_matrix)
+                    
+                    #print(np.matmul(self.formation_rot_matrix,  effective_point_cloud[i]), np.matmul(self.formation_rot_matrix,  effective_point_cloud[my_index]))
+                    #print(np.linalg.norm(target_delta))
                 #target_delta = np.matmul(self.formation_rot_matrix,  target_delta) # check the multiplication. 
                 u -= target_delta - delta
             i+=1
@@ -302,7 +318,7 @@ class TriangleMember(Mission):
 
         for uav in range(uav_count):
             for point in range(uav_count):
-                cost_matrix[uav, point] = dist(uav_poses[uav], (np.matmul(self.formation_rot_matrix ,point_cloud[point]) + self.formation_pos))
+                cost_matrix[uav, point] = dist(uav_poses[uav], (np.matmul(self.formation_rot_matrix ,point_cloud[point])) + self.formation_pos)
                 
 
         row_ind, col_ind = linear_sum_assignment(cost_matrix)

@@ -145,8 +145,8 @@ class UAV(object):
         quaternion = quaternion_from_euler(0, 0, yaw)
         msg.pose.orientation = SP.Quaternion(*quaternion)
         self._last_target_pose = msg
-        print("pos control")
-        print(msg)
+        #print("pos control")
+        #print(msg)
         self.pub_pose.publish(msg)
 
     def arm(self, bool):
