@@ -57,31 +57,33 @@ def start_missions():
 
     point_cloud_star = []
     step = 2 * pi / 6
-    radius = 8
-    angle = 0.0
+    radius = 6
+    angle = 0.0 - 2*pi * (-30.0/360.0)
     for i in range(6):
         step_radius = radius
-        if(i % 2 == 0):
+        if(i % 2 == 1):
             step_radius = radius * 0.5
-        point_cloud_star.append(vec(cos(step * i) * step_radius, 5 ,sin(step * i )* step_radius))
+        point_cloud_star.append(vec(cos(step * i) * step_radius * 1.6, sin(step * i )* step_radius, 5))
 
 
     point_cloud_hex = []
     step = 2 * pi / 6
-    radius = 10
+    radius = 12
     angle = 0.0
     for i in range(6):
         step_radius = radius
-        point_cloud_hex.append(vec(cos(step * i) * step_radius, 5 ,sin(step * i) * step_radius) )
+        point_cloud_hex.append(vec(cos(step * i) * step_radius ,sin(step * i) * step_radius,5) )
         
         
-    point_cloud_line = [np.array([0,  0,5]), np.array([5, 0, 5]), 
-                        np.array([10, 0,5]), np.array([15, 0,5]), 
-                        np.array([20, 0,5]), np.array([25, 0,5]), ]
+    point_cloud_line = [np.array([0,  5, 0]), np.array([5,  5, 0]), 
+                        np.array([10, 5, 0]), np.array([15, 5, 0]), 
+                        np.array([20, 5, 0]), np.array([25, 5, 0]), ]
 
-    point_cloud_rect = [np.array([0,0,5]), np.array([0, 0, 10]), 
-                        np.array([5, 0,5]), np.array([5, 0,10]), 
-                        np.array([10, 0,5]), np.array([10, 0,10]), ]
+    point_cloud_rect = [np.array([0,5, 0]), np.array([0,10, 0]), 
+                        np.array([5,5, 0]), np.array([5,10,0]), 
+                        np.array([10,5, 0]), np.array([10,10, 0]), ]
+    for i in range(len(point_cloud_rect)):
+        point_cloud_rect[i] = point_cloud_rect[i] * 1.6
 
 
 
@@ -111,30 +113,48 @@ def start_missions():
         formation_targetpos.publish_data()
         time.sleep(10)
 
-        formation_targetrot.axis = 'Z'
-        formation_targetrot.duration = 20
-        formation_targetrot.angle = 2* math.pi
-        formation_targetrot.publish_data()
-        time.sleep(120)
-
         formation_targetpos.value = vec(20.0,0.0,15.0)
         formation_targetpos.publish_data()
         time.sleep(6)
+
+        formation_targetrot.axis = 'Z'
+        formation_targetrot.duration = 10
+        formation_targetrot.angle = 0.5 * math.pi
+        formation_targetrot.publish_data()
+        time.sleep(10)
 
         formation_targetpos.value = vec(20.0,20.0,15.0)
         formation_targetpos.publish_data()
         time.sleep(6)
 
+
+        formation_targetrot.axis = 'Z'
+        formation_targetrot.duration = 10
+        formation_targetrot.angle = 0.5 * math.pi
+        formation_targetrot.publish_data()
+        time.sleep(10)
+
         formation_targetpos.value = vec(0.0,20.0,15.0)
         formation_targetpos.publish_data()
         time.sleep(6)
 
-        formation_targetpos.value = vec(0.0,0.0,15.0)
+        formation_targetrot.axis = 'Z'
+        formation_targetrot.duration = 10
+        formation_targetrot.angle = 0.5 * math.pi
+        formation_targetrot.publish_data()
+        time.sleep(10)
+
+        formation_targetpos.value = vec(0.0,20.0,15.0)
         formation_targetpos.publish_data()
-        time.sleep(4)
+        time.sleep(6)
+
+
+        #formation_targetpos.value = vec(0.0,0.0,15.0)
+        #formation_targetpos.publish_data()
+        #time.sleep(4)
 
         i+=1
-
+        '''
         # change formation
         if(i % 4 == 0):
             point_cloud_info.value = point_cloud_star
@@ -149,7 +169,7 @@ def start_missions():
             point_cloud_info.value = point_cloud_rect
             point_cloud_info.publish_data()
 
-        
+        '''
 
 
     a = input()

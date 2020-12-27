@@ -20,6 +20,9 @@ class Mission(object):
     def __init__(self):
         self.start_time = None
         self.type = -1
+        self.delta_time = 1.0
+        self.last_frame_time = 0.0
+        
 
     def execute_mission(self, uav, rate):
         self.uav = uav
@@ -50,6 +53,8 @@ class Mission(object):
         pass
 
     def mission_loop(self, uav, rate):
+        self.delta_time = self.get_time_since_start(uav, rate) - self.last_frame_time
+        self.last_frame_time = self.get_time_since_start(uav, rate)
         pass
 
     def mission_ended(self, uav, rate):

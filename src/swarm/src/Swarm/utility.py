@@ -67,6 +67,25 @@ def rotation_matrix(psi, axis='Z'):
     
     return mat
 
+def rotation_matrix_derivate(psi, axis='Z'):
+    mat = np.eye(3)
+    if axis=="X":
+        mat[1,1] = -math.sin(psi)
+        mat[1,2] = -math.cos(psi)
+        mat[2,1] = math.cos(psi)
+        mat[2,2] = -math.sin(psi)
+    elif axis == "Y":
+        mat[0,0] = -math.sin(psi)
+        mat[0,2] = math.cos(psi)
+        mat[2,0] = -math.cos(psi)
+        mat[2,2] = -math.sin(psi)
+    elif axis == "Z":
+        mat[0,0] = -math.sin(psi)
+        mat[0,1] = math.cos(psi) 
+        mat[1,0] = math.cos(psi) 
+        mat[1,1] = -math.sin(psi)
+    
+    return mat
 def lerp(start, end, interval):
     return (end - start) * interval + start
 def inverse_lerp(start,end, value):
