@@ -1,5 +1,6 @@
 #!/usr/bin/env python2
 # vim:set ts=4 sw=4 et:
+
 import rospy
 import _thread as thread
 import threading
@@ -9,135 +10,118 @@ import mavros
 from math import *
 from mavros.utils import *
 from mavros import setpoint as SP
-from tf.transformations import quaternion_from_euler
+#from tf.transformations import quaternion_from_euler
 from mavros_msgs.srv import SetMode
+from mavros_msgs.srv import CommandTOL
+from mavros_msgs.srv import CommandBool
 from std_msgs.msg import String
-#from mavros_msgs.msg import 
+from mavros import command
+# from mavros_msgs.msg import
+# from mavsdk import System
+from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import Vector3
+from missions import *
+from uav import UAV
+from mission_factory import MissionFactory
+from triangle_missions import TriangleLeader
+from triangle_missions_decentralized import TriangleMember
+from utility import *
+import signal
+## New task: selecting a leader which give commands from the gcs to the rest of the group
+# the command is applied by the group.
+# How do we make the connections 
+# Create a mission which accepts its leader
 
+def interupt_handler(sig_num, frame):
+    print ("Exiting")
+    sys.exit(-2) #Terminate process here as catching the signal removes the close process behavior of Ctrl-C
 
-class SetpointPosition:
-    """
-    This class sends position targets to FCU's position controller
-    """
-    def __init__(self):
-        self.x = 0.0
-        self.y = 0.0
-        self.z = 0.0
-
-        self.pub_state = rospy.Publisher("sqr_state", String, queue_size = 10)
-        # publisher for mavros/setpoint_position/local
-        self.pub = SP.get_pub_position_local(queue_size=10)
-        # subscriber for mavros/local_position/local
-        self.sub = rospy.Subscriber(mavros.get_topic('local_position', 'pose'),
-                                    SP.PoseStamped, self.reached)
-
-        self.offb_set_mode = SetMode()
-
-        try:
-            thread.start_new_thread(self.navigate, ())
-        except:
-            fault("Error: Unable to start thread")
-
-        # TODO(simon): Clean this up.
-        self.done = False
-        self.done_evt = threading.Event()
-
-    def navigate(self):
-        rate = rospy.Rate(10)   # 10hz
-
-        msg = SP.PoseStamped(
-            header=SP.Header(
-                frame_id="base_footprint",  # no matter, plugin don't use TF
-                stamp=rospy.Time.now()),    # stamp should update
-        )
-        while not rospy.is_shutdown():
-            msg.pose.position.x = self.x
-            msg.pose.position.y = self.y
-            msg.pose.position.z = self.z
-
-            # For demo purposes we will lock yaw/heading to north.
-            yaw_degrees = 0  # North
-            yaw = radians(yaw_degrees)
-            quaternion = quaternion_from_euler(0, 0, yaw)
-            msg.pose.orientation = SP.Quaternion(*quaternion)
-
-            self.pub.publish(msg)
-            rate.sleep()
-
-    def set(self, x, y, z, delay=0, wait=True):
-        self.done = False
-        self.x = x
-        self.y = y
-        self.z = z
-
-        if wait:
-            rate = rospy.Rate(5)
-            while not self.done and not rospy.is_shutdown():
-                rate.sleep()
-        time.sleep(delay)
-
-    def reached(self, topic):
-        def is_near(msg, x, y):
-            rospy.logdebug("Position %s: local: %d, target: %d, abs diff: %d",
-                           msg, x, y, abs(x - y))
-            return abs(x - y) < 0.5
-
-        if is_near('X', topic.pose.position.x, self.x) and \
-           is_near('Y', topic.pose.position.y, self.y) and \
-           is_near('Z', topic.pose.position.z, self.z):
-            self.done = True
-            self.done_evt.set()
-
-
-def setpoint_demo():
-    rospy.init_node('setpoint_position_demo')
-    mavros.set_namespace()  # initialize mavros module with default namespace
+def hmm(topic):
+    print("hmmmmmmmm: " + topic.data)
+def start_missions():
+    rospy.init_node('destroyer')
     rate = rospy.Rate(10)
-    setpoint = SetpointPosition()
 
-    setpoint.pub_state.publish(str(0))
+    # define the UAV objects
+    uavs = []
+    for i in range(6):
+        uav = UAV("uav" + str(i))
+        uavs.append(uav)
+    time.sleep(3)
 
-    flightModeService = rospy.ServiceProxy('mavros/set_mode', SetMode)
-    flightModeService(custom_mode='OFFBOARD')
+    # define a mission and assign it to uavs
+    member_mission = TriangleMember()
+    member_mission.uav_count = 6
+
+
+    point_cloud_star = []
+    step = 2 * pi / 6
+    radius = 10
+    angle = 0.0
+    for i in range(6):
+        step_radius = radius
+        if(i % 2 == 0):
+            step_radius = radius * 0.5
+        point_cloud_star.append(vec(cos(step * i) * step_radius, 5 ,sin(step * i )* step_radius))
+
+
+    point_cloud_hex = []
+    step = 2 * pi / 6
+    radius = 10
+    angle = 0.0
+    for i in range(6):
+        step_radius = radius
+        point_cloud_hex.append(vec(cos(step * i) * step_radius, 5 ,sin(step * i) * step_radius) )
+        
+        
+    point_cloud_line = [np.array([0,  0,5]), np.array([5, 0, 5]), 
+                        np.array([10, 0,5]), np.array([15, 0,5]), 
+                        np.array([20, 0,5]), np.array([25, 0,5]), ]
+
+    point_cloud_rect = [np.array([0,0,5]), np.array([0, 0, 10]), 
+                        np.array([5, 0,5]), np.array([5, 0,10]), 
+                        np.array([10, 0,5]), np.array([10, 0,10]), ]
+
+
+
     
+    for i in range(6):
+        member_mission.uav_id = i    
+        uavs[i].assign_mission(member_mission, ("uav" + str(i)))
 
+    time.sleep(2)
+    point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
+    signal.signal(signal.SIGINT, interupt_handler)
+    while True:
+        # update point cloud
+        point_cloud_info.value = point_cloud_star
+        point_cloud_info.publish_data()
+        time.sleep(10)
+        
+        # update point cloud
+        point_cloud_info.value = point_cloud_rect
+        point_cloud_info.publish_data()
+        time.sleep(10)
 
-    setpoint.pub_state.publish(str(1))
-    setpoint.set(0.0, 0.0, 5.0, 5)
-    setpoint.pub_state.publish(str(2))
-    setpoint.set(10.0, 0.0, 5.0, 5)
-    setpoint.pub_state.publish(str(3))
-    setpoint.set(10.0, 10.0, 5.0, 5)
-    setpoint.pub_state.publish(str(4))
-    setpoint.set(0.0, 10.0, 5.0, 5)
-    setpoint.pub_state.publish(str(5))
-    setpoint.set(0.0, 0.0, 5.0, 5)
-    setpoint.pub_state.publish(str(6))
-    setpoint.set(0.0, 0.0,  0.0, 5)
+        # update point cloud
+        point_cloud_info.value = point_cloud_line
+        point_cloud_info.publish_data()
+        time.sleep(10)
+
+        # update point cloud
+        point_cloud_info.value = point_cloud_hex
+        point_cloud_info.publish_data()
+        time.sleep(10)
+
     
+    
+    return
 
-    rospy.loginfo("Bye!")
 
 
 if __name__ == '__main__':
     try:
-        setpoint_demo()
+        start_missions()
     except rospy.ROSInterruptException:
         pass
-'''
- def talker():
-     pub = rospy.Publisher('chatter', String, queue_size=10)
-     rospy.init_node('talker', anonymous=True)
-     rate = rospy.Rate(10) # 10hz
-       while not rospy.is_shutdown():
-           hello_str = "hello world %s" % rospy.get_time()
-           rospy.loginfo(hello_str)
-           pub.publish(hello_str)
-           rate.sleep()
-   
-   if __name__ == '__main__':
-       try:
-           talker()
-       except rospy.ROSInterruptException:
-           pass
-'''
+
