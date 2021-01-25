@@ -23,6 +23,7 @@ class NetworkedInfo(object):
             NetworkedInfo.topic_to_network_info[topic] = new_instance
             return new_instance
 
+    # don't ever call this from outside, get NetworkInfo's via "get_or_create" instead
     def __init__(self, topic, data):
         self.callbacks = []
         self.data = data
@@ -34,7 +35,6 @@ class NetworkedInfo(object):
 
     def get_data(self):
         return self.data
-
 
     def assign_callback(self, callback):
         self.callbacks.append(callback)

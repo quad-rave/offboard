@@ -82,18 +82,21 @@ class FormationRotationData:
 
 
 class TriangleMember(Mission):
-    # constants
+    # constants:
+
     # formation
-    k_p = 1.0
+    k_p = 0.01
+    k_d = 0.16
     k_r = 5.0
 
     # collision avoidance (between uavs)
-    ca_alpha = 6.0
+    ca_alpha = 0.6
     ca_beta = 0.5
+    ca_safety_region = 10.0
 
     # tracking
-    k_tp = 1.0
-    k_td = 1.0
+    k_tp = 0.025
+    k_td = 0.08
 
     def __init__(self):
         super(TriangleMember, self).__init__()
@@ -102,7 +105,7 @@ class TriangleMember(Mission):
         self.uav_id = None
         self.uav_pos_infos = []
         self.uav_vel_infos = []
-        self.point_cloud_info = None
+        self.formation_points_info = None
         self.u_integral = np.array([0.0, 0.0, 0.0])
         self.formation_pos = vec(0.0, 0.0, 0.0)  # center
         self.formation_vel = vec(0.0, 0.0, 0.0)
@@ -168,7 +171,7 @@ class TriangleMember(Mission):
         super(TriangleMember, self).mission_started(uav, rate)
 
         # point cloud is now recieved dynamically as a VectorArrayInfo
-        self.point_cloud_info = NetworkedInfo.get_or_create("/triangle_mission/point_cloud", [])
+        self.formation_points_info = NetworkedInfo.get_or_create("/triangle_mission/formation_points", [])
         self.formation_targetpos_info = NetworkedInfo.get_or_create("/triangle_mission/formation_targetpos", vec())
         self.formation_rot_info = NetworkedInfo.get_or_create("/triangle_mission/formation_targetrot",
                                                               FormationRotationData())
@@ -193,7 +196,7 @@ class TriangleMember(Mission):
 
         targetpos_u_navigation = self.get_targetpos_u_navigation()
         dampen_u_navigation = self.get_dampen_u_navigation()
-        navigation_gain = targetpos_u_navigation * 0.05 + dampen_u_navigation * 0.2
+        navigation_gain = targetpos_u_navigation + dampen_u_navigation
 
         self.formation_rot_update()
 
@@ -206,15 +209,14 @@ class TriangleMember(Mission):
 
                 u = self.get_collision_avoidance_u(my_pos, others_pos)
                 collision_avoidance_u += u
-
             i += 1
 
-        targetpos_u = self.get_targetpos_u_via_effective_point_cloud()  # self.get_targetpos_u()
-        dampen_u = (self.formation_vel - uav.get_current_velocity()) * (0.8)
+        targetpos_u = self.get_targetpos_u_via_effective_formation_points()  # self.get_targetpos_u()
+        dampen_u = (self.formation_vel - uav.get_current_velocity()) * (TriangleMember.k_d)
         altitude_u = self.get_altitude_u()
-        formation_gain = targetpos_u * (0.01) + dampen_u * 0.2 + collision_avoidance_u * 0.1 + altitude_u * 0.1
+        formation_gain = targetpos_u + dampen_u + collision_avoidance_u + altitude_u * 0.1
 
-        self.u_integral += formation_gain + navigation_gain * 0.5
+        self.u_integral += formation_gain + navigation_gain
 
         uav.set_target_pose(uav.get_current_pose() + self.u_integral)
 
@@ -224,7 +226,7 @@ class TriangleMember(Mission):
 
         return TriangleMember.k_tp * (target - current)
     def get_dampen_u_navigation(self):
-        return self.formation_vel * (-0.8) * TriangleMember.k_td
+        return self.formation_vel * (-1.0) * TriangleMember.k_td
 
     def communications(self):
         self.uav_pos_infos[self.uav_id].set_data(self.uav.get_current_pose())
@@ -253,8 +255,8 @@ class TriangleMember(Mission):
         else:
             return np.array([0.0, 0.0, 0.0])
 
-    def get_targetpos_u_via_effective_point_cloud(self):
-        effective_point_cloud = self.get_effective_point_cloud()
+    def get_targetpos_u_via_effective_formation_points(self):
+        effective_formation_points = self.get_effective_formation_points()
 
         i = 0
         my_index = self.uav_id
@@ -265,9 +267,9 @@ class TriangleMember(Mission):
                 other_pos = uav_pos_info.get_data()
                 delta = other_pos - my_pos
 
-                target_delta = effective_point_cloud[i] - effective_point_cloud[my_index]
-                rotated_target_delta = np.matmul(self.formation_rot_matrix, effective_point_cloud[i]) - np.matmul(
-                    self.formation_rot_matrix, effective_point_cloud[my_index])
+                target_delta = effective_formation_points[i] - effective_formation_points[my_index]
+                rotated_target_delta = np.matmul(self.formation_rot_matrix, effective_formation_points[i]) - np.matmul(
+                    self.formation_rot_matrix, effective_formation_points[my_index])
 
                 cu = np.matmul((self.formation_rot_matrix_derivative * self.formation_rot_cur_angle_integrator.f_d1),
                                target_delta)
@@ -281,11 +283,11 @@ class TriangleMember(Mission):
         target_delta = other_target_pos - my_target_pos
         return target_delta - delta
 
-    def get_effective_point_cloud(self):
+    def get_effective_formation_points(self):
         uav_poses = []
         for uav_pos_info in self.uav_pos_infos:
             uav_poses.append(uav_pos_info.get_data())
-        point_cloud = self.point_cloud_info.get_data()
+        formation_points = self.formation_points_info.get_data()
         uav_count = self.uav_count
 
         cost_matrix = np.zeros((uav_count, uav_count), dtype=np.float64)
@@ -293,50 +295,30 @@ class TriangleMember(Mission):
         for uav in range(uav_count):
             for point in range(uav_count):
                 cost_matrix[uav, point] = dist(uav_poses[uav], (
-                    np.matmul(self.formation_rot_matrix, point_cloud[point])) + self.formation_pos)
+                    np.matmul(self.formation_rot_matrix, formation_points[point])) + self.formation_pos)
 
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
         # print(row_ind, "\n----------")
         # print(col_ind)
 
-        effective_point_cloud = [vec(0.0, 0.0, 0.0) for i in range(len(point_cloud))]
+        effective_formation_points = [vec(0.0, 0.0, 0.0) for i in range(len(formation_points))]
         for i in range(len(row_ind)):
-            effective_point_cloud[row_ind[i]] = point_cloud[col_ind[i]]
+            effective_formation_points[row_ind[i]] = formation_points[col_ind[i]]
 
-        return effective_point_cloud
+        return effective_formation_points
 
-    def get_collision_avoidance_u(self, selfpos, otherpos, dist=10):
-        # u_ca(i) = alpha * sum(exp(- beta * abs(r_ij)))
+    def get_collision_avoidance_u(self, selfpos, otherpos):
         distance = np.linalg.norm(selfpos - otherpos)
         direction = selfpos - otherpos
         direction = direction / np.linalg.norm(direction)
 
-        alpha = 6
-        beta = 0.5
-
         if distance < dist:
-            return direction * alpha * (math.exp(-beta * distance) - math.exp(-beta * dist))
+            return direction * TriangleMember.ca_alpha * (math.exp(-TriangleMember.ca_beta * distance) - math.exp(-TriangleMember.ca_beta * TriangleMember.ca_safety_region))
         else:
             return np.array([0.0, 0.0, 0.0])
 
     def get_position_u(self, selfpos, targetpos):
         # u_f(i) = kp*sum(p(j) - p(i) - delta_ij)
         u = targetpos - selfpos
-        u = u * 1
         return u
 
-
-''' 
-if(distance < 5.0):
-    #force_mag = 20 * math.exp(- 2 * abs(distance))
-    force_mag = 15 * math.exp(- 1.5 * abs(distance))
-    #4 * e^(- 0.25 * abs(x))
-
-    direction = (otherpos - selfpos) / distance
-    force = -direction * force_mag
-    if(self.uav_id == 2):
-        print("selfpos: ", selfpos, "otherpos: ", otherpos)
-        print("distance: ", distance, "force: ", force)
-    return force
-return np.array([0.0,0.0,0.0])
-'''
