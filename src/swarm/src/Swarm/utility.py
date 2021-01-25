@@ -20,7 +20,7 @@ def dist(a,b):
     return np.linalg.norm(a - b)
 
 
-def vec(x,y,z):
+def vec(x = 0.0,y = 0.0,z = 0.0):
     return np.array([x,y,z])
 
 '''
