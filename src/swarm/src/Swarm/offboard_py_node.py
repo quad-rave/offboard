@@ -93,60 +93,42 @@ def start_missions():
         uavs[i].assign_mission(member_mission, ("uav" + str(i)))
 
     time.sleep(2)
-    point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
-    formation_targetpos = VectorInfo("/triangle_mission/formation_targetpos")
-    formation_targetrot = FormationRotationInfo("/triangle_mission/formation_targetrot")
+    point_cloud_info = NetworkedInfo.get_or_create("/triangle_mission/point_cloud", [])
+    formation_targetpos = NetworkedInfo.get_or_create("/triangle_mission/formation_targetpos", vec())
+    formation_targetrot = NetworkedInfo.get_or_create("/triangle_mission/formation_targetrot", FormationRotationData())
     
     #self.formation_rot_info = FormationRotationInfo("/triangle_mission/formation_rot")
 
     time.sleep(2)
     
-    point_cloud_info.value = point_cloud_star
-    point_cloud_info.publish_data()
-    formation_targetpos.value = vec(0.0,0.0,15.0)
-    formation_targetpos.publish_data()
+    point_cloud_info.set_data(point_cloud_star)
+    formation_targetpos.set_data(vec(0.0,0.0,15.0))
     time.sleep(4)
 
     i = 0
     while True:
-        formation_targetpos.value = vec(0.0,0.0,15.0)
-        formation_targetpos.publish_data()
+        formation_targetpos.set_data(vec(0.0,0.0,15.0))
         time.sleep(10)
 
-        formation_targetpos.value = vec(20.0,0.0,15.0)
-        formation_targetpos.publish_data()
+        formation_targetpos.set_data(vec(20.0,0.0,15.0))
         time.sleep(6)
 
-        formation_targetrot.axis = 'Z'
-        formation_targetrot.duration = 10
-        formation_targetrot.angle = 0.5 * math.pi
-        formation_targetrot.publish_data()
+        formation_targetrot.set_data(FormationRotationData('Z', 10, 0.5 * math.pi))
         time.sleep(10)
 
-        formation_targetpos.value = vec(20.0,20.0,15.0)
-        formation_targetpos.publish_data()
+        formation_targetpos.set_data(vec(20.0,20.0,15.0))
         time.sleep(6)
 
 
-        formation_targetrot.axis = 'Z'
-        formation_targetrot.duration = 10
-        formation_targetrot.angle = 0.5 * math.pi
-        formation_targetrot.publish_data()
+        formation_targetrot.set_data(FormationRotationData('Z', 10, 0.5 * math.pi))
         time.sleep(10)
 
-        formation_targetpos.value = vec(0.0,20.0,15.0)
-        formation_targetpos.publish_data()
+        formation_targetpos.set_data(vec(0.0,20.0,15.0))
         time.sleep(6)
 
-        formation_targetrot.axis = 'Z'
-        formation_targetrot.duration = 10
-        formation_targetrot.angle = 0.5 * math.pi
-        formation_targetrot.publish_data()
+        formation_targetrot.set_data(FormationRotationData('Z', 10, 0.5 * math.pi))
         time.sleep(10)
 
-        formation_targetpos.value = vec(0.0,20.0,15.0)
-        formation_targetpos.publish_data()
-        time.sleep(6)
 
 
         #formation_targetpos.value = vec(0.0,0.0,15.0)

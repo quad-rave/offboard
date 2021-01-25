@@ -36,12 +36,10 @@ class TakeOffAndWaitOthers(Mission):
         super(TakeOffAndWaitOthers, self).mission_started(uav, rate)
 
         for i in range(self.uav_count):
-            uav_confirmation_info = BoolInfo("uav" + str(i) + "/TakeOffAndWaitOthers_mission/ready")
-            uav_confirmation_info.value = False # initialize local value with false
-            self.uav_confirmation_infos.append(BoolInfo("uav" + str(i) + "/TakeOffAndWaitOthers_mission/ready"))
+            uav_confirmation_info = NetworkedInfo.get_or_create("uav" + str(i) + "/TakeOffAndWaitOthers_mission/ready", False)
+            self.uav_confirmation_infos.append(NetworkedInfo.get_or_create(("uav" + str(i) + "/TakeOffAndWaitOthers_mission/ready"), False))
         
-        self.mission_complete_info = BoolInfo("TakeOffAndWaitOthers_mission/complete")
-        self.mission_complete_info.value = False
+        self.mission_complete_info = NetworkedInfo.get_or_create("TakeOffAndWaitOthers_mission/complete", False)
 
         # start the synced takeoff mission
         self.takeoff = TakeOff()
@@ -49,15 +47,14 @@ class TakeOffAndWaitOthers(Mission):
 
     def mission_loop(self, uav, rate):
         # did i takeoff successfully yet? publish the data.
-        self.uav_confirmation_infos[self.uav_id].value = self.takeoff.mission_ended(uav,rate) 
-        self.uav_confirmation_infos[self.uav_id].publish_data() 
+        self.uav_confirmation_infos[self.uav_id].set_data(self.takeoff.mission_ended(uav,rate))
 
         # check if every uav have taken off
         all_uavs_taken_off = True
         i = 0
         for uav_confirmation_info in self.uav_confirmation_infos:
             if i != self.uav_id:
-                value = uav_confirmation_info.value
+                value = uav_confirmation_info.get_data()
                 if(value == False):
                     all_uavs_taken_off = False
                 
@@ -65,34 +62,23 @@ class TakeOffAndWaitOthers(Mission):
         
         # This uav saw a step where everybody had taken off. This uav calls the mission complete.
         if(all_uavs_taken_off):
-            self.mission_complete_info.value = True
-            self.mission_complete_info.publish_data()
+            self.mission_complete_info.set_data(True)
 
         # update takeoff mission (synced mission)
         self.takeoff.mission_loop(uav,rate)
 
 
     def mission_ended(self,uav,rate):
-        return self.mission_complete_info.value
+        return self.mission_complete_info.get_data()
 
-class FormationRotationInfo(NetworkedInfo):
-    
-    def __init__(self, topic):
-        super(FormationRotationInfo, self).__init__(topic)
-        self.axis = "Z"
-        self.duration = 5.0
-        self.angle = 0.0
-        
-    def serialize_into_buffer(self, buffer):
-        buffer.write_char(self.axis)
-        buffer.write_float(self.duration)
-        buffer.write_float(self.angle)
 
-    
-    def deserialize_from_buffer(self, buffer):
-        self.axis = buffer.read_char()
-        self.duration = buffer.read_float()
-        self.angle = buffer.read_float()
+class FormationRotationData:
+    def __init__(self, axis="Z", duration=5.0, angle=0.0):
+
+        self.axis = axis
+        self.duration = duration
+        self.angle = angle
+
 
 class TriangleMember(Mission):
     def __init__(self):
@@ -127,9 +113,9 @@ class TriangleMember(Mission):
 
         
     def formation_rot_info_callback(self):
-        self.formation_rot_axis = self.formation_rot_info.axis
-        self.formation_rot_duration = self.formation_rot_info.duration
-        self.formation_rot_target_angle = self.formation_rot_info.angle
+        self.formation_rot_axis = self.formation_rot_info.get_data().axis
+        self.formation_rot_duration = self.formation_rot_info.get_data().duration
+        self.formation_rot_target_angle = self.formation_rot_info.get_data().angle
         self.formation_rot_starttime = self.uav.get_current_time().to_sec()
         self.formation_rot_cur_angle = 0.0
         self.formation_rot_cur_angle_integrator = IntegratorSystem()
@@ -204,15 +190,15 @@ class TriangleMember(Mission):
         super(TriangleMember, self).mission_started(uav, rate)
 
         # point cloud is now recieved dynamically as a VectorArrayInfo
-        self.point_cloud_info = VectorArrayInfo("/triangle_mission/point_cloud")
-        self.formation_targetpos_info = VectorInfo("/triangle_mission/formation_targetpos")
-        self.formation_rot_info = FormationRotationInfo("/triangle_mission/formation_targetrot")
+        self.point_cloud_info = NetworkedInfo.get_or_create("/triangle_mission/point_cloud", [])
+        self.formation_targetpos_info = NetworkedInfo.get_or_create("/triangle_mission/formation_targetpos", vec())
+        self.formation_rot_info = NetworkedInfo.get_or_create("/triangle_mission/formation_targetrot", FormationRotationData())
         self.formation_rot_info.assign_callback(self.formation_rot_info_callback)
 
         for i in range(self.uav_count):
             #self.uav_pos_infos.append(VectorInfo(topic))
-            self.uav_pos_infos.append(VectorInfo("uav" + str(i) + "/triangle_mission/current_pos"))
-            self.uav_vel_infos.append(VectorInfo("uav" + str(i) + "/triangle_mission/current_vel"))
+            self.uav_pos_infos.append(NetworkedInfo.get_or_create("uav" + str(i) + "/triangle_mission/current_pos", vec()))
+            self.uav_vel_infos.append(NetworkedInfo.get_or_create("uav" + str(i) + "/triangle_mission/current_vel", vec()))
         # this mission will end when all uavs have taken off and ready
         swarm_takeoff = TakeOffAndWaitOthers()
         swarm_takeoff.uav_count = self.uav_count
@@ -237,7 +223,7 @@ class TriangleMember(Mission):
         for uav_pos_info in self.uav_pos_infos:
             if i != self.uav_id:
                 my_pos = self.uav.get_current_pose()
-                others_pos = uav_pos_info.value
+                others_pos = uav_pos_info.get_data()
 
                 u = self.get_collision_avoidance_u(my_pos, others_pos)
                 collision_avoidance_u += u
@@ -255,37 +241,33 @@ class TriangleMember(Mission):
 
 
     def get_targetpos_u_navigation(self):
-        target = self.formation_targetpos_info.value
+        target = self.formation_targetpos_info.get_data()
         current = self.formation_pos
 
         return target - current
 
     
     def communications(self):
-        self.uav_pos_infos[self.uav_id].value = self.uav.get_current_pose() # change for the Vector3 ds
-        self.uav_pos_infos[self.uav_id].publish_data()
+        self.uav_pos_infos[self.uav_id].set_data(self.uav.get_current_pose())
 
-        self.uav_vel_infos[self.uav_id].value = self.uav.get_current_velocity() # change for the Vector3 ds
-        self.uav_vel_infos[self.uav_id].publish_data()
-
-        #print("my id: ", self.uav_id)
+        self.uav_vel_infos[self.uav_id].set_data(self.uav.get_current_velocity())
 
 
         pos_sum = vec(0.0,0.0,0.0)
         for uav_pos_info in self.uav_pos_infos:
-            pos_sum += uav_pos_info.value
+            pos_sum += uav_pos_info.get_data()
         self.formation_pos = pos_sum / self.uav_count
     
         vel_sum = vec(0.0,0.0,0.0)
         i = 0
         for uav_vel_info in self.uav_vel_infos:
-            vel_sum += uav_vel_info.value
+            vel_sum += uav_vel_info.get_data()
             i += 1
         self.formation_vel = vel_sum / self.uav_count
 
     def get_altitude_u(self):
         my_index = self.uav_id
-        my_pos = self.uav_pos_infos[my_index].value
+        my_pos = self.uav_pos_infos[my_index].get_data()
         if(my_pos[2] < 4):
             closeness = 1 - my_pos[2]/3
             force = closeness * closeness * 10
@@ -295,29 +277,28 @@ class TriangleMember(Mission):
     def get_targetpos_u(self):
         i = 0
         my_index = self.uav_id
-        my_pos = self.uav_pos_infos[my_index].value
+        my_pos = self.uav_pos_infos[my_index].get_data()
         u = np.array([0.0,0.0,0.0])
         for uav_pos_info in self.uav_pos_infos:
             if(i != my_index):
-                other_pos = uav_pos_info.value
+                other_pos = uav_pos_info.get_data()
                 delta = other_pos - my_pos
-                target_delta = self.point_cloud_info.value[i] - self.point_cloud_info.value[my_index]
+                target_delta = self.point_cloud_info.get_data()[i] - self.point_cloud_info.get_data()[my_index]
                 u -= target_delta - delta
             i+=1
         return u
 
     def get_targetpos_u_via_effective_point_cloud(self):
         effective_point_cloud = self.get_effective_point_cloud()
-        #effective_point_cloud = self.point_cloud_info.value
 
         i = 0
         my_index = self.uav_id
-        my_pos = self.uav_pos_infos[my_index].value
+        my_pos = self.uav_pos_infos[my_index].get_data()
         u = np.array([0.0,0.0,0.0])
         kR = 5 #
         for uav_pos_info in self.uav_pos_infos:
             if(i != my_index):
-                other_pos = uav_pos_info.value
+                other_pos = uav_pos_info.get_data()
                 delta = other_pos - my_pos
                 
                 target_delta =  effective_point_cloud[i] - effective_point_cloud[my_index]
@@ -344,8 +325,8 @@ class TriangleMember(Mission):
     def get_effective_point_cloud(self):
         uav_poses = []
         for uav_pos_info in self.uav_pos_infos:
-            uav_poses.append(uav_pos_info.value)
-        point_cloud = self.point_cloud_info.value
+            uav_poses.append(uav_pos_info.get_data())
+        point_cloud = self.point_cloud_info.get_data()
         uav_count = self.uav_count
 
         
