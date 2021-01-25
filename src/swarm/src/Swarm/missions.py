@@ -22,7 +22,7 @@ class Mission(object):
         self.type = -1
         self.delta_time = 1.0
         self.last_frame_time = 0.0
-        
+        self.max_delta_time = 0.5
 
     def execute_mission(self, uav, rate):
         self.uav = uav
@@ -54,6 +54,8 @@ class Mission(object):
 
     def mission_loop(self, uav, rate):
         self.delta_time = self.get_time_since_start(uav, rate) - self.last_frame_time
+        if self.delta_time > self.max_delta_time:
+            self.delta_time = self.max_delta_time
         self.last_frame_time = self.get_time_since_start(uav, rate)
         pass
 

@@ -85,18 +85,18 @@ class TriangleMember(Mission):
     # constants:
 
     # formation
-    k_p = 0.01
-    k_d = 0.16
+    k_p = 0.1
+    k_d = 1.6
     k_r = 5.0
 
     # collision avoidance (between uavs)
-    ca_alpha = 0.6
+    ca_alpha = 6.0
     ca_beta = 0.5
     ca_safety_region = 10.0
 
     # tracking
-    k_tp = 0.025
-    k_td = 0.08
+    k_tp = 0.25
+    k_td = 0.8
 
     def __init__(self):
         super(TriangleMember, self).__init__()
@@ -196,7 +196,7 @@ class TriangleMember(Mission):
 
         targetpos_u_navigation = self.get_targetpos_u_navigation()
         dampen_u_navigation = self.get_dampen_u_navigation()
-        navigation_gain = targetpos_u_navigation + dampen_u_navigation
+        navigation_u = targetpos_u_navigation + dampen_u_navigation
 
         self.formation_rot_update()
 
@@ -214,9 +214,9 @@ class TriangleMember(Mission):
         targetpos_u = self.get_targetpos_u_via_effective_formation_points()  # self.get_targetpos_u()
         dampen_u = (self.formation_vel - uav.get_current_velocity()) * (TriangleMember.k_d)
         altitude_u = self.get_altitude_u()
-        formation_gain = targetpos_u + dampen_u + collision_avoidance_u + altitude_u * 0.1
-
-        self.u_integral += formation_gain + navigation_gain
+        formation_u = targetpos_u + dampen_u + collision_avoidance_u + altitude_u * 0.1
+        combined_u = formation_u + navigation_u
+        self.u_integral += combined_u  * (self.delta_time)
 
         uav.set_target_pose(uav.get_current_pose() + self.u_integral)
 
@@ -312,7 +312,7 @@ class TriangleMember(Mission):
         direction = selfpos - otherpos
         direction = direction / np.linalg.norm(direction)
 
-        if distance < dist:
+        if distance < TriangleMember.ca_safety_region:
             return direction * TriangleMember.ca_alpha * (math.exp(-TriangleMember.ca_beta * distance) - math.exp(-TriangleMember.ca_beta * TriangleMember.ca_safety_region))
         else:
             return np.array([0.0, 0.0, 0.0])
