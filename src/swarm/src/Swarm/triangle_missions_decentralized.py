@@ -194,9 +194,9 @@ class TriangleMember(Mission):
 
         self.communications()
 
-        targetpos_u_navigation = self.get_targetpos_u_navigation()
-        dampen_u_navigation = self.get_dampen_u_navigation()
-        navigation_u = targetpos_u_navigation + dampen_u_navigation
+        targetpos_u_traction = self.get_targetpos_u_traction()
+        dampen_u_traction = self.get_dampen_u_traction()
+        traction_u = targetpos_u_traction + dampen_u_traction
 
         self.formation_rot_update()
 
@@ -215,17 +215,17 @@ class TriangleMember(Mission):
         dampen_u = (self.formation_vel - uav.get_current_velocity()) * (TriangleMember.k_d)
         altitude_u = self.get_altitude_u()
         formation_u = targetpos_u + dampen_u + collision_avoidance_u + altitude_u * 0.1
-        combined_u = formation_u + navigation_u
-        self.u_integral += combined_u  * (self.delta_time)
+        combined_u = formation_u + traction_u
+        self.u_integral += combined_u  * self.delta_time
 
         uav.set_target_pose(uav.get_current_pose() + self.u_integral)
 
-    def get_targetpos_u_navigation(self):
+    def get_targetpos_u_traction(self):
         target = self.formation_targetpos_info.get_data()
         current = self.formation_pos
 
         return TriangleMember.k_tp * (target - current)
-    def get_dampen_u_navigation(self):
+    def get_dampen_u_traction(self):
         return self.formation_vel * (-1.0) * TriangleMember.k_td
 
     def communications(self):
