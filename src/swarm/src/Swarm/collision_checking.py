@@ -2,7 +2,7 @@ from utility import *
 import numpy as np
 
 
-class Obstacle:
+class Obstacle(object):
     def __init__(self):
         pass
 
@@ -12,7 +12,7 @@ class Obstacle:
 
 class Cube(Obstacle):
     def __init__(self, center, cube_extends):
-        super(Obstacle, self).__init__()
+        super(Cube, self).__init__()
         self.center = center
         self.cube_extents = cube_extends
 
@@ -22,7 +22,7 @@ class Cube(Obstacle):
 
 class Sphere(Obstacle):
     def __init__(self, center, radius):
-        super(Obstacle, self).__init__()
+        super(Sphere, self).__init__()
         self.center = center
         self.radius = radius
 
@@ -32,7 +32,7 @@ class Sphere(Obstacle):
 
 class Cylinder(Obstacle):
     def __init__(self, center, half_height, radius):
-        super(Obstacle, self).__init__()
+        super(Cylinder, self).__init__()
         self.center = center
         self.half_height = half_height
         self.radius = radius

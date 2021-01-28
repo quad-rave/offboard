@@ -3,7 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="22ef28b5-22a4-4e04-9928-88750665741c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Swarm/experiments.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/experiments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Swarm/collision_checking.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/collision_checking.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Swarm/offboard_py_node.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/offboard_py_node.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Swarm/triangle_missions_decentralized.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/triangle_missions_decentralized.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/Swarm/utility.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/utility.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -54,5 +56,16 @@
       </map>
     </option>
     <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/src/Swarm/offboard_py_node.py</url>
+          <line>3</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

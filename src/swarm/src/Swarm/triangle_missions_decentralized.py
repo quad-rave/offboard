@@ -15,7 +15,7 @@ from missions import *
 from scipy.optimize import linear_sum_assignment
 from utility import *
 from integrator_system import IntegratorSystem
-
+from collision_checking import CollisionChecking
 
 class TakeOffAndWaitOthers(Mission):
     def __init__(self):
@@ -93,6 +93,11 @@ class TriangleMember(Mission):
     ca_alpha = 6.0
     ca_beta = 0.5
     ca_safety_region = 10.0
+
+    # collision avoidance (environmental)
+    ca_env_alpha = 6.00
+    ca_env_beta = 0.5
+    ca_env_safety_region = 20.0
 
     # tracking
     k_tp = 0.25
@@ -197,6 +202,7 @@ class TriangleMember(Mission):
         targetpos_u_traction = self.get_targetpos_u_traction()
         dampen_u_traction = self.get_dampen_u_traction()
         traction_u = targetpos_u_traction + dampen_u_traction
+        traction_u = clamp_vector_length(traction_u, 1.0)
 
         self.formation_rot_update()
 
@@ -215,10 +221,16 @@ class TriangleMember(Mission):
         dampen_u = (self.formation_vel - uav.get_current_velocity()) * (TriangleMember.k_d)
         altitude_u = self.get_altitude_u()
         formation_u = targetpos_u + dampen_u + collision_avoidance_u + altitude_u * 0.1
-        combined_u = formation_u + traction_u
+        formation_u = clamp_vector_length(formation_u, 1.5)
+        
+        environmental_ca_u = self.get_environmental_collision_avoidance_u()
+        combined_u = formation_u + traction_u + environmental_ca_u
         self.u_integral += combined_u  * self.delta_time
 
         uav.set_target_pose(uav.get_current_pose() + self.u_integral)
+
+        print("traction u: " + str(np.linalg.norm(traction_u))) # cap 1
+        print("formation u: " + str(np.linalg.norm(formation_u))) # cap 1.5
 
     def get_targetpos_u_traction(self):
         target = self.formation_targetpos_info.get_data()
@@ -306,6 +318,25 @@ class TriangleMember(Mission):
             effective_formation_points[row_ind[i]] = formation_points[col_ind[i]]
 
         return effective_formation_points
+
+    def get_environmental_collision_avoidance_u(self):
+        collision_checker = CollisionChecking.get_or_create()
+        closest_point = collision_checker.check_closest_point(self.uav.get_current_pose())
+
+        ca_u = self.get_collision_avoidance_u(self.uav.get_current_pose(), closest_point)
+
+        distance = np.linalg.norm(self.uav.get_current_pose() - closest_point)
+        if distance < 0.01:
+            print("uav: " + str(self.uav_id) + "mypos: " + str(self.uav.get_current_pose()) + "obstacle: " + str(closest_point))
+
+        direction = self.uav.get_current_pose() - closest_point
+        direction = direction / np.linalg.norm(direction)
+
+        if distance < TriangleMember.ca_env_safety_region:
+            return direction * TriangleMember.ca_env_alpha * (math.exp(-TriangleMember.ca_env_beta * distance) - math.exp(
+                -TriangleMember.ca_env_beta * TriangleMember.ca_env_safety_region))
+        else:
+            return np.array([0.0, 0.0, 0.0])
 
     def get_collision_avoidance_u(self, selfpos, otherpos):
         distance = np.linalg.norm(selfpos - otherpos)
