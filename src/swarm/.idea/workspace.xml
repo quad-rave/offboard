@@ -3,12 +3,20 @@
   <component name="ChangeListManager">
     <list default="true" id="22ef28b5-22a4-4e04-9928-88750665741c" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Swarm/triangle_missions_decentralized.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/triangle_missions_decentralized.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Swarm/experiments.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/experiments.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Swarm/utility.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/Swarm/utility.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
