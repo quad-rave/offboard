@@ -156,6 +156,21 @@ def closest_point_on_cylinder(point, center, half_height, radius):
     return closest_point
 
 
+def normalize_vector(vector):
+    return vector / np.linalg.norm(vector)
+
+
+def project_vector_on_direction(vector, direction):
+    direction = normalize_vector(direction)
+    return np.dot(vector, direction) * normalize_vector(vector)
+
+
+def project_vector_on_plane(vector, plane_normal):
+    plane_normal = normalize_vector(plane_normal)
+    projected_on_normal = project_vector_on_direction(vector, plane_normal)
+    return vector - projected_on_normal
+
+
 if __name__ == "__main__":
     np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)})
 

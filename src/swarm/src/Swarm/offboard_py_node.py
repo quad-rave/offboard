@@ -114,12 +114,8 @@ def start_missions():
         formation_targetpos.set_data(vec(10.0, 1.0, 15.0))
         time.sleep(18)
 
-        formation_targetpos.set_data(vec(2.0, 1.0, 15.0))
-        time.sleep(5)
-        formation_targetpos.set_data(vec(-10.0, 1.0, 15.0))
-        time.sleep(15)
         formation_targetpos.set_data(vec(-20.0, 1.0, 15.0))
-        time.sleep(6)
+        time.sleep(20)
 
         formation_targetpos.set_data(vec(-10.0, 1.0, 15.0))
         time.sleep(5)

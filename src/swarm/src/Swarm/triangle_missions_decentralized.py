@@ -102,6 +102,7 @@ class TriangleMember(Mission):
     # tracking
     k_tp = 0.25
     k_td = 0.8
+    traction_max_velocity = 2.0
 
     def __init__(self):
         super(TriangleMember, self).__init__()
@@ -200,9 +201,17 @@ class TriangleMember(Mission):
         self.communications()
 
         targetpos_u_traction = self.get_targetpos_u_traction()
+        # limit swarm velocity
+        if np.linalg.norm(self.formation_vel) > np.linalg.norm(TriangleMember.traction_max_velocity):
+            print "clamping: " + str(np.linalg.norm(targetpos_u_traction))
+            targetpos_u_traction = project_vector_on_plane(targetpos_u_traction, self.formation_vel)
+            print "clamped: " + str(np.linalg.norm(targetpos_u_traction))
+
         dampen_u_traction = self.get_dampen_u_traction()
+
         traction_u = targetpos_u_traction + dampen_u_traction
-        traction_u = clamp_vector_length(traction_u, 1.0)
+        #traction_u = clamp_vector_length(traction_u, 1.0)
+
 
         self.formation_rot_update()
 
@@ -221,7 +230,7 @@ class TriangleMember(Mission):
         dampen_u = (self.formation_vel - uav.get_current_velocity()) * (TriangleMember.k_d)
         altitude_u = self.get_altitude_u()
         formation_u = targetpos_u + dampen_u + collision_avoidance_u + altitude_u * 0.1
-        formation_u = clamp_vector_length(formation_u, 1.5)
+        #formation_u = clamp_vector_length(formation_u, 1.5)
         
         environmental_ca_u = self.get_environmental_collision_avoidance_u()
         combined_u = formation_u + traction_u + environmental_ca_u
