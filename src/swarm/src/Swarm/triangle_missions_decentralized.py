@@ -191,6 +191,7 @@ class TriangleMember(Mission):
                 NetworkedInfo.get_or_create("uav" + str(i) + "/triangle_mission/current_vel", vec()))
         # this mission will end when all uavs have taken off and ready
         swarm_takeoff = TakeOffAndWaitOthers()
+        print("uav count: " + str(self.uav_count))
         swarm_takeoff.uav_count = self.uav_count
         swarm_takeoff.uav_id = self.uav_id
         swarm_takeoff.execute_mission(uav, rate)

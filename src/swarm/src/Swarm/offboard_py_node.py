@@ -56,15 +56,22 @@ def start_missions():
     initialize_collider_information()
 
     # define the UAV objects
+
     uavs = []
-    for i in range(6):
-        uav = UAV("uav" + str(i))
-        uavs.append(uav)
+    i = 0
+    for x in range(5):
+        for y in range(4):
+            uav = UAV("uav" + str(i))
+            uavs.append(uav)
+            uav.initial_pos = vec(x,y,0.0)
+            i += 1
+
     time.sleep(3)
 
     # define a mission and assign it to uavs
+    used_uav_count = 20
     member_mission = TriangleMember()
-    member_mission.uav_count = 6
+    member_mission.uav_count = used_uav_count
 
     formation_points_star = []
     step = 2 * pi / 6
@@ -94,7 +101,7 @@ def start_missions():
     for i in range(len(formation_points_rect)):
         formation_points_rect[i] = formation_points_rect[i] * 1.6
 
-    for i in range(6):
+    for i in range(used_uav_count):
         member_mission.uav_id = i
         uavs[i].assign_mission(member_mission, ("uav" + str(i)))
 
@@ -105,7 +112,18 @@ def start_missions():
 
     time.sleep(2)
 
-    formation_points_info.set_data(formation_points_star)
+    step = 2 * pi / float(used_uav_count)
+    radius = 7
+    angle = 0.0
+    formation_points_20_square = []
+    for i in range(used_uav_count):
+        step_radius = radius
+        formation_points_20_square.append(vec(cos(step * i) * step_radius, sin(step * i) * step_radius, 5))
+
+
+
+
+    formation_points_info.set_data(formation_points_20_square)
     formation_targetpos.set_data(vec(0.0, 0.0, 15.0))
     time.sleep(4)
 
