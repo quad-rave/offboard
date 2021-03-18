@@ -23,7 +23,7 @@ from buffer import DataBuffer
 from missions import *
 import numpy as np
 from mission_factory import MissionFactory
-
+from utility import *
 
 class MissionThread:
     def __init__(self, mission, uav, rate):
@@ -69,6 +69,7 @@ class UAV(object):
         self._last_target_pose = None
         self.rate = rospy.Rate(10)
         self.active_mission_threads = []
+        self.initial_pos = vec(0.0,0.0,0.0)
         print("c")
 
         
@@ -112,7 +113,7 @@ class UAV(object):
     def get_current_pose(self): # this should return vector3
         return np.array([self.pose_stamped.pose.position.x,
                                 self.pose_stamped.pose.position.y, 
-                                self.pose_stamped.pose.position.z])
+                                self.pose_stamped.pose.position.z]) + self.initial_pos
 
     def get_current_velocity(self):
         return np.array([self.vel_read_topic.twist.linear.x,  
@@ -130,15 +131,14 @@ class UAV(object):
 
     # send target position to drone
     def set_target_pose(self, vec):
-        
         msg = SP.PoseStamped(
             header=SP.Header(
                 frame_id="base_footprint",  # no matter, plugin don't use TF
                 stamp=rospy.Time.now()),  # stamp should update
         )
-        msg.pose.position.x = vec[0]
-        msg.pose.position.y = vec[1]
-        msg.pose.position.z = vec[2]
+        msg.pose.position.x = vec[0] - self.initial_pos[0]
+        msg.pose.position.y = vec[1] - self.initial_pos[1]
+        msg.pose.position.z = vec[2] - self.initial_pos[2]
         # For demo purposes we will lock yaw/heading to north.
         yaw_degrees = 0  # North
         yaw = radians(yaw_degrees)
